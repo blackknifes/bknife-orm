@@ -24,7 +24,7 @@ import com.bknife.orm.mapper.assemble.MysqlAssembleFactory;
 import com.bknife.orm.mapper.assemble.SqlAssembleFactory;
 
 @Configuration
-@ConditionalOnClass(OrmConfig.class)
+@ConditionalOnClass({ Mapper.class, MapperService.class })
 @EnableConfigurationProperties(OrmProperties.class)
 public class OrmAutoConfiguration implements OrmConstants {
     @Autowired

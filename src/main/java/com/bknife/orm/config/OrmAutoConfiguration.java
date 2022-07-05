@@ -19,6 +19,7 @@ import com.bknife.orm.annotion.DBDataSource;
 import com.bknife.orm.mapper.Mapper;
 import com.bknife.orm.mapper.MapperFactory;
 import com.bknife.orm.mapper.MapperFactoryImpl;
+import com.bknife.orm.mapper.MapperService;
 import com.bknife.orm.mapper.assemble.MysqlAssembleFactory;
 import com.bknife.orm.mapper.assemble.SqlAssembleFactory;
 
@@ -55,10 +56,22 @@ public class OrmAutoConfiguration implements OrmConstants {
     }
 
     @Bean
-    @SuppressWarnings("unchecked")
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     public <T> Mapper<T> createMapper(final ConfigurableApplicationContext context, final InjectionPoint ip,
             final MapperFactory factory)
+            throws Exception {
+        return factory.createMapperByType(getMapperClass(context, ip), getDataSource(context, ip));
+    }
+
+    @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public <T> MapperService<T> createMapperService(final ConfigurableApplicationContext context,
+            final InjectionPoint ip,
+            final MapperFactory factory) throws Exception {
+        return factory.createServiceByType(getMapperClass(context, ip), getDataSource(context, ip));
+    }
+
+    private DataSource getDataSource(final ConfigurableApplicationContext context, final InjectionPoint ip)
             throws Exception {
         DBDataSource dbDataSource = ip.getAnnotation(DBDataSource.class);
         DataSource currentDataSource;
@@ -69,6 +82,13 @@ public class OrmAutoConfiguration implements OrmConstants {
             currentDataSource = (DataSource) context.getBean("DataSource");
         if (currentDataSource == null)
             throw new NullPointerException("dataSource is null");
+        return currentDataSource;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> getMapperClass(final ConfigurableApplicationContext context, final InjectionPoint ip)
+            throws Exception {
+
         ResolvableType resolvableType = null;
         if (ip.getField() != null)
             resolvableType = ResolvableType.forField(ip.getField());
@@ -76,8 +96,6 @@ public class OrmAutoConfiguration implements OrmConstants {
             resolvableType = ResolvableType.forMethodParameter(ip.getMethodParameter());
         if (resolvableType == null)
             throw new Exception("cannot found table generic type");
-        Class<T> clazz = (Class<T>) resolvableType.getGeneric(0).resolve();
-
-        return factory.createMapperByType(clazz, currentDataSource);
+        return (Class<T>) resolvableType.getGeneric(0).resolve();
     }
 }

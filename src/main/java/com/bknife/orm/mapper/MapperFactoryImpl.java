@@ -127,4 +127,9 @@ public class MapperFactoryImpl implements MapperFactory {
             return createViewMapper(clazz, dataSource);
         return createTableMapper(clazz, dataSource);
     }
+
+    @Override
+    public <T> MapperService<T> createServiceByType(Class<T> clazz, DataSource dataSource) throws Exception {
+        return new MapperServiceBase<T>(createMapperByType(clazz, dataSource));
+    }
 }

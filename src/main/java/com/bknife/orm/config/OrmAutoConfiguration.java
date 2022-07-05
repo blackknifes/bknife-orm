@@ -31,7 +31,7 @@ public class OrmAutoConfiguration implements OrmConstants {
     private OrmProperties ormProperties;
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(OrmConfig.class)
     public OrmConfig ormConfig() {
         String type = ormProperties.getType() == null ? ORM_MYSQL : ormProperties.getType();
         boolean verbose = ormProperties.isVerbose();
@@ -42,7 +42,7 @@ public class OrmAutoConfiguration implements OrmConstants {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(SqlAssembleFactory.class)
     public SqlAssembleFactory sqlAssembleFactory(OrmConfig ormConfig) throws Exception {
         if (ORM_MYSQL.equalsIgnoreCase(ormConfig.getType()))
             return new MysqlAssembleFactory();
@@ -50,7 +50,7 @@ public class OrmAutoConfiguration implements OrmConstants {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(MapperFactory.class)
     public MapperFactory mapperFactory(SqlAssembleFactory factory, OrmConfig ormConfig) {
         return new MapperFactoryImpl(factory, ormConfig.isVerbose());
     }

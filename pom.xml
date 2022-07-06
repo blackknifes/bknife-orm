@@ -4,19 +4,14 @@
     <groupId>com.bknife</groupId>
     <artifactId>orm</artifactId>
     <name>orm</name>
-    <version>0.0.7</version>
+    <version>0.0.9</version>
     <packaging>jar</packaging>
 
-    <properties>
-        <java.version>1.8</java.version>
-        <java.encoding>UTF-8</java.encoding>
-        <bknife-base.version>0.0.3</bknife-base.version>
-        <spring-jdbc.version>5.3.21</spring-jdbc.version>
-        <spring-boot.version>2.7.0</spring-boot.version>
-        <lombok.version>1.18.24</lombok.version>
-        <slf4j.version>1.7.36</slf4j.version>
-        <mysql.version>8.0.29</mysql.version>
-    </properties>
+    <parent>
+        <groupId>com.github.blackknifes</groupId>
+        <artifactId>bknife-jar-parent</artifactId>
+        <version>0.0.1</version>
+    </parent>
 
     <repositories>
         <repository>
@@ -25,24 +20,15 @@
         </repository>
     </repositories>
 
+    <properties>
+        <bknife-base.version>0.0.5</bknife-base.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.github.blackknifes</groupId>
             <artifactId>bknife-base</artifactId>
             <version>${bknife-base.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
-            <version>${slf4j.version}</version>
-            <type>pom</type>
         </dependency>
 
         <dependency>
@@ -60,44 +46,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
-            <version>${spring-boot.version}</version>
+            <version>${spring-boot-starter.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
-            <version>${spring-boot.version}</version>
+            <version>${spring-boot-autoconfigure.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
-                <configuration>
-                    <souce>${java.version}</souce>
-                    <target>${java.version}</target>
-                    <encoding>${java.encoding}</encoding>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-    <profiles>
-        <profile>
-            <id>build</id>
-            <activation>
-                <jdk>${java.version}</jdk>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-
-            <properties>
-                <maven.compiler.source>1.8</maven.compiler.source>
-                <maven.compiler.target>1.8</maven.compiler.target>
-                <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
-            </properties>
-        </profile>
-    </profiles>
 </project>

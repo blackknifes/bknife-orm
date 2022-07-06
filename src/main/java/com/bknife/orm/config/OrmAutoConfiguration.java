@@ -30,6 +30,9 @@ public class OrmAutoConfiguration implements OrmConstants {
     @Autowired
     private OrmProperties ormProperties;
 
+    @Autowired(required = false)
+    private DataSource dataSource;
+
     @Bean
     @ConditionalOnMissingBean(OrmConfig.class)
     public OrmConfig ormConfig() {
@@ -79,7 +82,7 @@ public class OrmAutoConfiguration implements OrmConstants {
         if (dbDataSource != null)
             currentDataSource = (DataSource) context.getBean(dbDataSource.value());
         else
-            currentDataSource = (DataSource) context.getBean("DataSource");
+            currentDataSource = dataSource;
         if (currentDataSource == null)
             throw new NullPointerException("dataSource is null");
         return currentDataSource;

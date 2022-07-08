@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 
 import com.bknife.orm.PageResult;
 import com.bknife.orm.annotion.DBField;
-import com.bknife.orm.mapper.assemble.SqlAssemble;
+import com.bknife.orm.assemble.SqlAssemble;
 import com.bknife.orm.mapper.where.Condition;
 
 public class TableMapper<T> implements Mapper<T> {
@@ -25,7 +25,7 @@ public class TableMapper<T> implements Mapper<T> {
         this.showSql = showSql;
 
         ArrayList<String> keys = new ArrayList<String>();
-        Class<?> clazz = assemble.getResultClass();
+        Class<?> clazz = assemble.getResultType();
         while (clazz != Object.class) {
             for (Field field : clazz.getDeclaredFields()) {
                 DBField column = field.getDeclaredAnnotation(DBField.class);

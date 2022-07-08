@@ -20,7 +20,7 @@ public @interface DBField {
         CHARS,
         DECIMAL,
         DATE,
-        DATETIME,
+        TIME,
         TIMESTAMP,
         BINARY
     }

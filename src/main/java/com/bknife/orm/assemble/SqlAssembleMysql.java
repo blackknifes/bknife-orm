@@ -1,4 +1,4 @@
-package com.bknife.orm.mapper.assemble;
+package com.bknife.orm.assemble;
 
 import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
@@ -20,6 +20,8 @@ import com.bknife.orm.annotion.DBJoin;
 import com.bknife.orm.annotion.DBSelectColumn;
 import com.bknife.orm.annotion.DBTable;
 import com.bknife.orm.annotion.DBUnique;
+import com.bknife.orm.assemble.assembled.SqlAssembledHasResult;
+import com.bknife.orm.assemble.assembled.SqlAssembledHasParameter;
 import com.bknife.orm.mapper.Updater;
 import com.bknife.orm.mapper.select.SqlOrderBy;
 import com.bknife.orm.mapper.util.SqlMapperUtil;
@@ -37,8 +39,12 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
     private Class<T> mapperClass;
     private DBTable table;
 
+    private List<Field> selectFields = new ArrayList<Field>();
+    private List<Field> insertFields = new ArrayList<Field>();
+
     public static <T> SqlAssemble<T> create(Class<T> mapperClass)
             throws Exception {
+
         DBTable table = SqlMapperUtil.findTableAnnotation(mapperClass);
         if (table == null)
             throw new Exception(mapperClass + " class is not a table class");
@@ -48,53 +54,30 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
     private SqlAssembleMysql(Class<T> mapperClass, DBTable table) {
         this.mapperClass = mapperClass;
         this.table = table;
+
+        Class<?> clazz = mapperClass;
+        do {
+            for (Field field : clazz.getDeclaredFields()) {
+                DBField dbField;
+                if ((dbField = field.getAnnotation(DBField.class)) != null ||
+                        field.getAnnotation(DBColumn.class) != null ||
+                        field.getAnnotation(DBSelectColumn.class) != null) {
+                    field.setAccessible(true);
+                    selectFields.add(field);
+                    if (dbField != null)
+                        insertFields.add(field);
+                }
+            }
+        } while ((clazz = clazz.getSuperclass()) != null);
     }
 
     @Override
-    public Class<T> getResultClass() {
+    public Class<T> getResultType() {
         return mapperClass;
     }
 
-    public T createFromResultSet(ResultSet resultSet) throws Exception {
-        T object = mapperClass.newInstance();
-        Class<?> viewClass = mapperClass;
-        while (viewClass != Object.class) {
-            for (Field field : viewClass.getDeclaredFields()) {
-
-                field.setAccessible(true);
-                Object value = null;
-                try {
-                    value = resultSet.getObject(field.getName());
-                    field.set(object, ConverterUtils.convert(value, field.getType()));
-                } catch (Exception e) {
-                    if (value != null) {
-                        log.error("value convert fail [" + field.getName() + "], convert(" + value.getClass() + " -> "
-                                + field.getType() + ") value: " + field.getType() + "  value: "
-                                + value);
-                    }
-                }
-            }
-            viewClass = viewClass.getSuperclass();
-        }
-        return object;
-    }
-
-    public void setPreparedStatementParameters(PreparedStatement ps, T object) throws Exception {
-        Class<?> viewClass = mapperClass;
-        int i = 1;
-        while (viewClass != Object.class) {
-            for (Field field : viewClass.getDeclaredFields()) {
-                if (field.getDeclaredAnnotation(DBField.class) == null)
-                    continue;
-                field.setAccessible(true);
-                ps.setObject(i++, field.get(object));
-            }
-            viewClass = viewClass.getSuperclass();
-        }
-    }
-
     @Override
-    public String assembleCreateTable() throws Exception {
+    public SqlAssembledHasParameter assembleCreateTable() throws Exception {
         StringBuffer buffer = new StringBuffer();
         buffer.append("CREATE TABLE IF NOT EXISTS ");
 
@@ -230,10 +213,10 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
         if (!table.comment().isEmpty())
             buffer.append(" COMMENT='").append(table.comment()).append("';");
 
-        return buffer.toString();
+        return SqlAssemblePool.getPool().getAssembledHasParameter(buffer.toString(), new ArrayList<SqlGetter>());
     }
 
-    private void assembleSelectFrom(StringBuffer buffer, Condition condition) throws Exception {
+    private void assembleSelectFrom(List<SqlGetter> params, StringBuffer buffer, Condition condition) throws Exception {
         buffer.append(" FROM ").append("`").append(table.name()).append("`");
 
         Class<?> viewMapper = mapperClass;
@@ -305,15 +288,20 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
     }
 
     @Override
-    public String assembleCount(Condition condition) throws Exception {
+    public SqlAssembledHasParameter assembleCount(Condition condition) throws Exception {
+        List<SqlGetter> getters = new ArrayList<SqlGetter>();
         StringBuffer buffer = new StringBuffer();
         buffer.append("SELECT COUNT(*)");
-        assembleSelectFrom(buffer, condition);
-        return buffer.toString();
+        assembleSelectFrom(getters, buffer, condition);
+
+        return SqlAssemblePool.getPool().getAssembledHasParameter(buffer.toString(), getters);
     }
 
     @Override
-    public String assembleSelect(Condition condition) throws Exception {
+    public SqlAssembledHasResult assembleSelect(Condition condition) throws Exception {
+        List<SqlGetter> getters = new ArrayList<SqlGetter>();
+        List<SqlSetter> setters = new ArrayList<SqlSetter>();
+
         StringBuffer buffer = new StringBuffer();
         buffer.append("SELECT ");
         Class<?> viewClass = mapperClass;
@@ -321,11 +309,11 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
         int count = 0;
         while (viewClass != Object.class) {
             for (Field field : viewClass.getDeclaredFields()) {
-                boolean isColumn = true;
                 do {
                     DBField dbField = field.getDeclaredAnnotation(DBField.class);
                     if (dbField != null) {
                         buffer.append("`").append(table.name()).append("`.`").append(dbField.name()).append("`");
+                        setters.add(SqlAssemblePool.getPool().getSetterField(field));
                         break;
                     }
 
@@ -334,33 +322,33 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
                         buffer.append("`").append(SqlMapperUtil.getTableName(dbColumn)).append("`.`")
                                 .append(dbColumn.name())
                                 .append("`");
+                        setters.add(SqlAssemblePool.getPool().getSetterField(field));
                         break;
                     }
 
                     DBSelectColumn selectColumn = field.getDeclaredAnnotation(DBSelectColumn.class);
                     if (selectColumn != null) {
                         buffer.append("(").append(selectColumn.value()).append(")");
+                        buffer.append(" AS `").append(field.getName()).append("`");
+                        setters.add(SqlAssemblePool.getPool().getSetterField(field));
                         break;
                     }
-                    isColumn = false;
-                } while (false);
-                if (isColumn) {
-                    buffer.append(" AS `").append(field.getName()).append("`,");
                     ++count;
-                }
+                } while (false);
+                buffer.append(",");
             }
             viewClass = viewClass.getSuperclass();
         }
         if (count == 0)
             throw new Exception("no field selectable");
         buffer.deleteCharAt(buffer.length() - 1);
-        assembleSelectFrom(buffer, condition);
+        assembleSelectFrom(getters, buffer, condition);
 
-        return buffer.toString();
+        return SqlAssemblePool.getPool().getAssembledHasResult(mapperClass, buffer.toString(), getters, setters);
     }
 
     @Override
-    public String assembleDelete(Condition condition) throws Exception {
+    public SqlAssembledHasParameter assembleDelete(Condition condition) throws Exception {
         if (condition == null || condition.getWheres().isEmpty())
             throw new Exception("forbit delete with no where");
         StringBuffer buffer = new StringBuffer();
@@ -491,7 +479,7 @@ public class SqlAssembleMysql<T> implements SqlAssemble<T> {
             case DATE:
                 buffer.append("DATE");
                 break;
-            case DATETIME:
+            case TIME:
                 buffer.append("DATETIME");
                 break;
             case TIMESTAMP:

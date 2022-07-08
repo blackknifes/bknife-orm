@@ -11,8 +11,8 @@ import com.bknife.orm.annotion.DBGroupBy;
 import com.bknife.orm.annotion.DBJoin;
 import com.bknife.orm.annotion.DBTable;
 import com.bknife.orm.annotion.DBView;
-import com.bknife.orm.mapper.assemble.SqlAssemble;
-import com.bknife.orm.mapper.assemble.SqlAssembleFactory;
+import com.bknife.orm.assemble.SqlAssemble;
+import com.bknife.orm.assemble.SqlAssembleFactory;
 
 public class MapperFactoryImpl implements MapperFactory {
     private Map<Class<?>, SqlAssemble<?>> assembles = new HashMap<Class<?>, SqlAssemble<?>>();

@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class MysqlAssembleFactory implements SqlAssembleFactory {
     private Map<Class<?>, SqlAssemble<?>> assembles = new HashMap<Class<?>, SqlAssemble<?>>();
+    private Map<Class<?>, SqlMapperInfo> mapperInfos = new HashMap<Class<?>, SqlMapperInfo>();
 
     @SuppressWarnings("unchecked")
     @Override
@@ -18,6 +19,17 @@ public class MysqlAssembleFactory implements SqlAssembleFactory {
             }
         }
         return assemble;
+    }
+
+    @Override
+    public SqlMapperInfo getMapperInfo(Class<?> clazz) throws Exception {
+        SqlMapperInfo sqlMapperInfo = mapperInfos.get(clazz);
+        if (sqlMapperInfo == null) {
+            sqlMapperInfo = new SqlTableInfo(this, clazz);
+            mapperInfos.put(clazz, sqlMapperInfo);
+        }
+
+        return sqlMapperInfo;
     }
 
 }

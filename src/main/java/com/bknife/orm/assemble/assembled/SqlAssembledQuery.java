@@ -5,7 +5,7 @@ import java.util.Collection;
 
 import com.bknife.orm.assemble.SqlSetter;
 
-public interface SqlAssembledHasResult extends SqlAssembledHasParameter {
+public interface SqlAssembledQuery extends SqlAssembled {
 
     /**
      * 获取对应类

@@ -5,8 +5,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
+/**
+ * 指定数据源
+ */
+@Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DBGroupBys {
-    public DBGroupBy[] value();
+public @interface DataSource {
+    /**
+     * 数据源bean名称
+     * 
+     * @return
+     */
+    public String value();
 }

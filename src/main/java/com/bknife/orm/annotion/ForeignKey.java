@@ -8,8 +8,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(DBForeignKeys.class)
-public @interface DBForeignKey {
+@Repeatable(ForeignKeys.class)
+public @interface ForeignKey {
 
     public static enum ForeignKeyAction {
         CASCADE,

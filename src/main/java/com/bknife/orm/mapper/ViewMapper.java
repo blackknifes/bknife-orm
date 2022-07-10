@@ -9,7 +9,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import com.bknife.orm.PageResult;
-import com.bknife.orm.annotion.DBField;
+import com.bknife.orm.annotion.Column;
 import com.bknife.orm.assemble.SqlAssemble;
 import com.bknife.orm.mapper.where.Condition;
 
@@ -29,7 +29,7 @@ public class ViewMapper<T> implements Mapper<T> {
         ArrayList<String> keys = new ArrayList<String>();
         while (clazz != Object.class) {
             for (Field field : clazz.getDeclaredFields()) {
-                DBField column = field.getDeclaredAnnotation(DBField.class);
+                Column column = field.getDeclaredAnnotation(Column.class);
                 if (column == null || !column.primaryKey())
                     continue;
                 keys.add(field.getName());

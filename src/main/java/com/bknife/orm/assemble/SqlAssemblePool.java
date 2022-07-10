@@ -4,10 +4,10 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 
 import com.bknife.base.ObjectPool;
-import com.bknife.orm.assemble.assembled.SqlAssembledHasResult;
-import com.bknife.orm.assemble.assembled.SqlAssembledHasResultImpl;
-import com.bknife.orm.assemble.assembled.SqlAssembledHasParameter;
-import com.bknife.orm.assemble.assembled.SqlAssembledHasParameterImpl;
+import com.bknife.orm.assemble.assembled.SqlAssembled;
+import com.bknife.orm.assemble.assembled.SqlAssembledImpl;
+import com.bknife.orm.assemble.assembled.SqlAssembledQuery;
+import com.bknife.orm.assemble.assembled.SqlAssembledQueryImpl;
 import com.bknife.orm.assemble.getter.SqlGetterField;
 import com.bknife.orm.assemble.getter.SqlGetterMap;
 import com.bknife.orm.assemble.getter.SqlGetterValue;
@@ -16,10 +16,10 @@ import com.bknife.orm.assemble.setter.SqlSetterList;
 import com.bknife.orm.assemble.setter.SqlSetterMap;
 
 public class SqlAssemblePool {
-    private ObjectPool<SqlAssembledHasResultImpl> assembledHasResultPool = new ObjectPool<SqlAssembledHasResultImpl>(
-            SqlAssembledHasResultImpl.class);
-    private ObjectPool<SqlAssembledHasParameterImpl> assembledHasParameterPool = new ObjectPool<SqlAssembledHasParameterImpl>(
-            SqlAssembledHasParameterImpl.class);
+    private ObjectPool<SqlAssembledQueryImpl> assembledQueryPool = new ObjectPool<SqlAssembledQueryImpl>(
+            SqlAssembledQueryImpl.class);
+    private ObjectPool<SqlAssembledImpl> assembledPool = new ObjectPool<SqlAssembledImpl>(
+            SqlAssembledImpl.class);
     private ObjectPool<SqlGetterField> getterFieldPool = new ObjectPool<SqlGetterField>(SqlGetterField.class);
     private ObjectPool<SqlGetterMap> getterMapPool = new ObjectPool<SqlGetterMap>(SqlGetterMap.class);
     private ObjectPool<SqlGetterValue> getterValuePool = new ObjectPool<SqlGetterValue>(SqlGetterValue.class);
@@ -33,13 +33,13 @@ public class SqlAssemblePool {
         return instance;
     }
 
-    public SqlAssembledHasResult getAssembledHasResult(Class<?> clazz, String sql, Collection<SqlGetter> getters,
+    public SqlAssembledQuery getAssembledQuery(Class<?> clazz, String sql, Collection<SqlGetter> getters,
             Collection<SqlSetter> setters) {
-        return assembledHasResultPool.get(this, clazz, sql, getters, setters);
+        return assembledQueryPool.get(this, clazz, sql, getters, setters);
     }
 
-    public SqlAssembledHasParameter getAssembledHasParameter(String sql, Collection<SqlGetter> getters) {
-        return assembledHasParameterPool.get(this, sql, getters);
+    public SqlAssembled getAssembled(String sql, Collection<SqlGetter> getters) {
+        return assembledPool.get(this, sql, getters);
     }
 
     public SqlGetter getGetterField(Field field) {
@@ -66,12 +66,11 @@ public class SqlAssemblePool {
         return setterMapPool.get(name);
     }
 
-    public void release(SqlAssembledHasResult assembled) {
-        assembledHasResultPool.release((SqlAssembledHasResultImpl) assembled);
-    }
-
-    public void release(SqlAssembledHasParameter assembled) {
-        assembledHasParameterPool.release((SqlAssembledHasParameterImpl) assembled);
+    public void release(SqlAssembled assembled) {
+        if (assembled instanceof SqlAssembledQueryImpl)
+            assembledQueryPool.release((SqlAssembledQueryImpl) assembled);
+        else
+            assembledPool.release((SqlAssembledImpl) assembled);
     }
 
     public void release(SqlGetter getter) {

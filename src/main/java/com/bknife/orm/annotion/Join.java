@@ -8,8 +8,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(DBJoins.class)
-public @interface DBJoin {
+@Repeatable(Joins.class)
+public @interface Join {
     /**
      * 连接方式
      */

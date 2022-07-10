@@ -6,11 +6,11 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import com.bknife.orm.annotion.DBForeignKey;
-import com.bknife.orm.annotion.DBGroupBy;
-import com.bknife.orm.annotion.DBJoin;
-import com.bknife.orm.annotion.DBTable;
-import com.bknife.orm.annotion.DBView;
+import com.bknife.orm.annotion.ForeignKey;
+import com.bknife.orm.annotion.GroupBy;
+import com.bknife.orm.annotion.Join;
+import com.bknife.orm.annotion.Table;
+import com.bknife.orm.annotion.View;
 import com.bknife.orm.assemble.SqlAssemble;
 import com.bknife.orm.assemble.SqlAssembleFactory;
 
@@ -27,9 +27,9 @@ public class MapperFactoryImpl implements MapperFactory {
 
     private boolean isView(Class<?> clazz) throws Exception {
         while (clazz != Object.class) {
-            if (clazz.getDeclaredAnnotation(DBView.class) != null)
+            if (clazz.getDeclaredAnnotation(View.class) != null)
                 return true;
-            else if (clazz.getDeclaredAnnotation(DBTable.class) != null)
+            else if (clazz.getDeclaredAnnotation(Table.class) != null)
                 return false;
             clazz = clazz.getSuperclass();
         }
@@ -106,17 +106,17 @@ public class MapperFactoryImpl implements MapperFactory {
     public <T> Mapper<T> createMapperByType(Class<T> clazz, DataSource dataSource) throws Exception {
         Class<?> mapperClass = clazz;
         while (mapperClass != Object.class) {
-            for (DBGroupBy groupBy : mapperClass.getDeclaredAnnotationsByType(DBGroupBy.class)) {
+            for (GroupBy groupBy : mapperClass.getDeclaredAnnotationsByType(GroupBy.class)) {
                 if (groupBy.tableClass() != Object.class && groupBy.tableClass() != clazz)
                     createMapperByType(groupBy.tableClass(), dataSource);
             }
 
-            for (DBForeignKey foreignKey : mapperClass.getDeclaredAnnotationsByType(DBForeignKey.class)) {
+            for (ForeignKey foreignKey : mapperClass.getDeclaredAnnotationsByType(ForeignKey.class)) {
                 if (foreignKey.tableClass() != Object.class && foreignKey.tableClass() != clazz)
                     createMapperByType(foreignKey.tableClass(), dataSource);
             }
 
-            for (DBJoin join : mapperClass.getDeclaredAnnotationsByType(DBJoin.class)) {
+            for (Join join : mapperClass.getDeclaredAnnotationsByType(Join.class)) {
                 if (join.tableClass() != Object.class && join.tableClass() != clazz)
                     createMapperByType(join.tableClass(), dataSource);
             }

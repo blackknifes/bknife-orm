@@ -10,8 +10,9 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DBField {
+public @interface Column {
     public static enum Type {
+        AUTO,
         BYTE,
         INTEGER,
         LONG,
@@ -33,7 +34,7 @@ public @interface DBField {
     /**
      * 类型
      */
-    public Type type();
+    public Type type() default Type.AUTO;
 
     /**
      * 长度
@@ -93,4 +94,25 @@ public @interface DBField {
      * 排序规则
      */
     public String collate() default "";
+
+    /**
+     * 来源表类
+     * 
+     * @return
+     */
+    public Class<?> tableClass() default Object.class;
+
+    /**
+     * 来源表名
+     * 
+     * @return
+     */
+    public String table() default "";
+
+    /**
+     * 自定义sql语句
+     * 
+     * @return
+     */
+    public String sql() default "";
 }

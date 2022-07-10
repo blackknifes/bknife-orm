@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(DBIndexs.class)
-public @interface DBIndex {
+@Repeatable(Indexs.class)
+public @interface Index {
 
     public static enum IndexType {
         NORMAL,

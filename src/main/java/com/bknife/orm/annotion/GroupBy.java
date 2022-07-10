@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(DBGroupBys.class)
-public @interface DBGroupBy {
+@Repeatable(GroupBys.class)
+public @interface GroupBy {
 
     /**
      * 字段名

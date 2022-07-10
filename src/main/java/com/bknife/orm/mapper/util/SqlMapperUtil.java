@@ -1,12 +1,12 @@
 package com.bknife.orm.mapper.util;
 
 import com.bknife.orm.annotion.DBColumn;
-import com.bknife.orm.annotion.DBForeignKey;
-import com.bknife.orm.annotion.DBGroupBy;
-import com.bknife.orm.annotion.DBIndex;
-import com.bknife.orm.annotion.DBJoin;
-import com.bknife.orm.annotion.DBTable;
-import com.bknife.orm.annotion.DBUnique;
+import com.bknife.orm.annotion.ForeignKey;
+import com.bknife.orm.annotion.GroupBy;
+import com.bknife.orm.annotion.Index;
+import com.bknife.orm.annotion.Join;
+import com.bknife.orm.annotion.Table;
+import com.bknife.orm.annotion.Unique;
 
 /**
  * sql映射工具
@@ -21,7 +21,7 @@ public interface SqlMapperUtil {
      */
     public static Class<?> findTableClass(Class<?> clazz) {
         while (clazz != Object.class) {
-            if (clazz.getDeclaredAnnotation(DBTable.class) != null)
+            if (clazz.getDeclaredAnnotation(Table.class) != null)
                 return clazz;
             clazz = clazz.getSuperclass();
         }
@@ -34,8 +34,8 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBTable getTableAnnotation(Class<?> clazz) {
-        return clazz.getDeclaredAnnotation(DBTable.class);
+    public static Table getTableAnnotation(Class<?> clazz) {
+        return clazz.getDeclaredAnnotation(Table.class);
     }
 
     /**
@@ -44,9 +44,9 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBTable findTableAnnotation(Class<?> clazz) {
+    public static Table findTableAnnotation(Class<?> clazz) {
         while (clazz != Object.class) {
-            DBTable table = clazz.getDeclaredAnnotation(DBTable.class);
+            Table table = clazz.getDeclaredAnnotation(Table.class);
             if (table != null)
                 return table;
             clazz = clazz.getSuperclass();
@@ -80,7 +80,7 @@ public interface SqlMapperUtil {
      * @param foreignKey
      * @return
      */
-    public static String getTableName(DBForeignKey foreignKey) {
+    public static String getTableName(ForeignKey foreignKey) {
         return foreignKey.tableClass() == Object.class ? foreignKey.table() : findTableName(foreignKey.tableClass());
     }
 
@@ -90,7 +90,7 @@ public interface SqlMapperUtil {
      * @param groupBy
      * @return
      */
-    public static String getTableName(DBGroupBy groupBy) {
+    public static String getTableName(GroupBy groupBy) {
         return groupBy.tableClass() == Object.class ? groupBy.table() : findTableName(groupBy.tableClass());
     }
 
@@ -100,7 +100,7 @@ public interface SqlMapperUtil {
      * @param join
      * @return
      */
-    public static String getTableName(DBJoin join) {
+    public static String getTableName(Join join) {
         return join.tableClass() == Object.class ? join.table() : findTableName(join.tableClass());
     }
 
@@ -110,8 +110,8 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBJoin[] getJoins(Class<?> clazz) {
-        return clazz.getDeclaredAnnotationsByType(DBJoin.class);
+    public static Join[] getJoins(Class<?> clazz) {
+        return clazz.getDeclaredAnnotationsByType(Join.class);
     }
 
     /**
@@ -120,8 +120,8 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBForeignKey[] getForeignKeys(Class<?> clazz) {
-        return clazz.getDeclaredAnnotationsByType(DBForeignKey.class);
+    public static ForeignKey[] getForeignKeys(Class<?> clazz) {
+        return clazz.getDeclaredAnnotationsByType(ForeignKey.class);
     }
 
     /**
@@ -130,8 +130,8 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBIndex[] getIndexs(Class<?> clazz) {
-        return clazz.getDeclaredAnnotationsByType(DBIndex.class);
+    public static Index[] getIndexs(Class<?> clazz) {
+        return clazz.getDeclaredAnnotationsByType(Index.class);
     }
 
     /**
@@ -140,8 +140,8 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBUnique[] getUniques(Class<?> clazz) {
-        return clazz.getDeclaredAnnotationsByType(DBUnique.class);
+    public static Unique[] getUniques(Class<?> clazz) {
+        return clazz.getDeclaredAnnotationsByType(Unique.class);
     }
 
     /**
@@ -150,7 +150,7 @@ public interface SqlMapperUtil {
      * @param clazz
      * @return
      */
-    public static DBGroupBy[] getGroupBies(Class<?> clazz) {
-        return clazz.getDeclaredAnnotationsByType(DBGroupBy.class);
+    public static GroupBy[] getGroupBies(Class<?> clazz) {
+        return clazz.getDeclaredAnnotationsByType(GroupBy.class);
     }
 }

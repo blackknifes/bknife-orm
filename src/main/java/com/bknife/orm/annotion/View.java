@@ -6,22 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 视图列
+ * 代表该类是一个视图类
  */
-@Target(ElementType.FIELD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DBViewColumn {
-    /**
-     * 列名
-     * 
-     * @return
-     */
-    public String name();
+public @interface View {
 
-    /**
-     * 表名
-     * 
-     * @return
-     */
-    public String table();
 }

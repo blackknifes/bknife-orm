@@ -5,7 +5,7 @@ import java.util.Collection;
 
 import com.bknife.orm.assemble.SqlGetter;
 
-public interface SqlAssembledHasParameter {
+public interface SqlAssembled {
     /**
      * 获取sql语句
      * 

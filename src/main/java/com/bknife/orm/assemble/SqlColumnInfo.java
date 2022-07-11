@@ -2,6 +2,7 @@ package com.bknife.orm.assemble;
 
 import java.lang.reflect.Field;
 
+import com.bknife.orm.annotion.Check;
 import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.Column.Type;
 
@@ -232,5 +233,14 @@ public class SqlColumnInfo implements SqlElement {
      */
     public String getSql() {
         return annotation.sql();
+    }
+
+    /**
+     * 获取check
+     * 
+     * @return
+     */
+    public Check getCheck() {
+        return field.getAnnotation(Check.class);
     }
 }

@@ -7,10 +7,10 @@ import java.util.Date;
 
 import com.bknife.orm.annotion.Check;
 import com.bknife.orm.annotion.Column;
+import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.annotion.ForeignKey;
 import com.bknife.orm.annotion.Index;
 import com.bknife.orm.annotion.Unique;
-import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.mapper.select.SqlOrderBy;
 import com.bknife.orm.mapper.where.Condition;
 import com.bknife.orm.mapper.where.SqlWhere;
@@ -186,7 +186,7 @@ public class SqlAssembleBuffer {
     }
 
     public SqlAssembleBuffer appendCount() {
-        return append("COUNT");
+        return append("COUNT(*)");
     }
 
     public SqlAssembleBuffer appendSum() {
@@ -344,12 +344,12 @@ public class SqlAssembleBuffer {
         }
     }
 
-    public SqlAssembleBuffer appendColumnDefine(SqlColumnInfo columnInfo, SqlTypeMapper typeMapper) {
+    public SqlAssembleBuffer appendColumnDefine(SqlColumnInfo columnInfo, SqlAssemble assemble) {
         appendName(columnInfo.getName()).appendSpace();
         Type type;
         if ((type = columnInfo.getType()) == Type.AUTO)
             type = SqlTypeUtil.getSqlType(columnInfo.getField().getType());
-        append(typeMapper.toString(type, columnInfo.getLength(), columnInfo.getDot()));
+        append(assemble.getTypeString(type, columnInfo.getLength(), columnInfo.getDot()));
         if (type == Type.STRING) {
             if (!columnInfo.getCharset().isEmpty())
                 appendSpace().appendCharset().appendSpace().append(columnInfo.getCharset());
@@ -669,8 +669,8 @@ public class SqlAssembleBuffer {
     }
 
     public SqlAssembleBuffer appendForeignKeys(SqlAssembleFactory factory, SqlMapperInfo mapperInfo,
-            Collection<ForeignKey> foreignKeys) throws Exception {
-        if (foreignKeys.isEmpty())
+            ForeignKey[] foreignKeys) throws Exception {
+        if (foreignKeys.length == 0)
             return this;
 
         for (ForeignKey foreignKey : foreignKeys)
@@ -694,6 +694,14 @@ public class SqlAssembleBuffer {
         return this;
     }
 
+    public SqlAssembleBuffer appendUniques(SqlMapperInfo mapperInfo, Unique[] uniques) {
+        if (uniques.length == 0)
+            return this;
+        for (Unique unique : uniques)
+            appendUnique(mapperInfo, unique).appendComma();
+        return this;
+    }
+
     public SqlAssembleBuffer appendUnique(SqlMapperInfo mapperInfo, Unique unique) {
         if (unique.value().length == 0)
             throw new IllegalArgumentException("unique keys cannot be empty");
@@ -712,6 +720,16 @@ public class SqlAssembleBuffer {
             appendName(key).appendComma();
         removeLast();
         appendRightBracket();
+        return this;
+    }
+
+    public SqlAssembleBuffer appendChecks(SqlMapperInfo mapperInfo, Collection<SqlColumnInfo> columns) {
+        for (SqlColumnInfo column : columns) {
+            Check check = column.getCheck();
+            if (check == null)
+                continue;
+            appendCheck(mapperInfo, column, check).appendComma();
+        }
         return this;
     }
 

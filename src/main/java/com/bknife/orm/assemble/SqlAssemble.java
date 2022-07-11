@@ -1,5 +1,6 @@
 package com.bknife.orm.assemble;
 
+import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.assemble.assembled.SqlAssembled;
 import com.bknife.orm.assemble.assembled.SqlAssembledQuery;
 import com.bknife.orm.mapper.Updater;
@@ -9,6 +10,14 @@ import com.bknife.orm.mapper.where.Condition;
  * sql组装器
  */
 public interface SqlAssemble {
+    /**
+     * 从type获取类型
+     * 
+     * @param type
+     * @return
+     */
+    public String getTypeString(Type type, int length, int dot);
+
     /**
      * 获取结果类
      * 

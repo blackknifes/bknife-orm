@@ -7,7 +7,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.bknife.orm.annotion.Column;
+import com.bknife.orm.annotion.ForeignKey;
+import com.bknife.orm.annotion.Index;
+import com.bknife.orm.annotion.Join;
 import com.bknife.orm.annotion.Table;
+import com.bknife.orm.annotion.Unique;
 
 /**
  * 表信息
@@ -49,6 +53,42 @@ public class SqlTableInfo implements SqlMapperInfo {
     @Override
     public String getSqlName() {
         return sqlName;
+    }
+
+    /**
+     * 获取所有外键
+     * 
+     * @return
+     */
+    public ForeignKey[] getForeignKeys() {
+        return tableClass.getDeclaredAnnotationsByType(ForeignKey.class);
+    }
+
+    /**
+     * 获取所有索引
+     * 
+     * @return
+     */
+    public Index[] getIndexs() {
+        return tableClass.getDeclaredAnnotationsByType(Index.class);
+    }
+
+    /**
+     * 获取所有Join
+     * 
+     * @return
+     */
+    public Join[] getJoins() {
+        return tableClass.getDeclaredAnnotationsByType(Join.class);
+    }
+
+    /**
+     * 获取所有Unique
+     * 
+     * @return
+     */
+    public Unique[] getUniques() {
+        return tableClass.getDeclaredAnnotationsByType(Unique.class);
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.bknife.orm.assemble;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
 
 import com.bknife.base.ObjectPool;
@@ -16,6 +17,9 @@ import com.bknife.orm.assemble.setter.SqlSetterList;
 import com.bknife.orm.assemble.setter.SqlSetterMap;
 
 public class SqlAssemblePool {
+
+    public static final Collection<SqlGetter> EMPTY_GETTER = new ArrayList<SqlGetter>();
+
     private ObjectPool<SqlAssembledQueryImpl> assembledQueryPool = new ObjectPool<SqlAssembledQueryImpl>(
             SqlAssembledQueryImpl.class);
     private ObjectPool<SqlAssembledImpl> assembledPool = new ObjectPool<SqlAssembledImpl>(

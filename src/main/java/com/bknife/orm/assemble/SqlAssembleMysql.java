@@ -1,7 +1,5 @@
 package com.bknife.orm.assemble;
 
-import java.util.ArrayList;
-
 import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.assemble.assembled.SqlAssembled;
 import com.bknife.orm.assemble.assembled.SqlAssembledQuery;
@@ -9,56 +7,55 @@ import com.bknife.orm.mapper.Updater;
 import com.bknife.orm.mapper.where.Condition;
 
 public class SqlAssembleMysql implements SqlAssemble {
-    private static class TypeMapper implements SqlTypeMapper {
-        @Override
-        public String toString(Type type, int length, int dot) {
-            switch (type) {
-                case BYTE:
-                    return "TINYINT";
-                case INTEGER:
-                    return "INT";
-                case LONG:
-                    return "BIGINT";
-                case DOUBLE:
-                    return "DOUBLE";
-                case STRING:
-                    if (length == 0)
-                        throw new IllegalArgumentException("varchar length is illegal: " + length);
-                    return "VARCHAR(" + length + ")";
-                case CHARS:
-                    if (length == 0)
-                        throw new IllegalArgumentException("char length is illegal: " + length);
-                    return "CHAR(" + length + ")";
-                case DECIMAL:
-                    if (length == 0)
-                        throw new IllegalArgumentException("decimal length is illegal: " + length);
-                    return "DECIMAL(" + length + "," + dot + ")";
-                case DATE:
-                    return "DATE";
-                case TIME:
-                    return "TIME";
-                case TIMESTAMP:
-                    return "TIMESTAMP";
-                case BINARY:
-                    if (length == 0)
-                        throw new IllegalArgumentException("varchar length is illegal: " + length);
-                    return "VARBINARY(" + length + ")";
-                default:
-                    break;
-            }
-            throw new IllegalArgumentException("type is illegal: " + type);
-        }
-
-    }
 
     private SqlTableInfo tableInfo;
-    private SqlTypeMapper typeMapper = new TypeMapper();
+    private SqlAssembleFactory factory;
 
-    public SqlAssembleMysql(SqlAssembleFactory factory, Class<T> clazz) throws Exception {
+    public SqlAssembleMysql(SqlAssembleFactory factory, Class<?> clazz) throws Exception {
+        this.factory = factory;
         SqlMapperInfo mapperInfo = factory.getMapperInfo(clazz);
         if (mapperInfo == null || !(mapperInfo instanceof SqlTableInfo))
             throw new Exception("class [" + clazz + "] is not a table class");
         tableInfo = (SqlTableInfo) mapperInfo;
+    }
+
+    @Override
+    public String getTypeString(Type type, int length, int dot) {
+        switch (type) {
+            case BYTE:
+                return "TINYINT";
+            case INTEGER:
+                return "INT";
+            case LONG:
+                return "BIGINT";
+            case DOUBLE:
+                return "DOUBLE";
+            case STRING:
+                if (length == 0)
+                    throw new IllegalArgumentException("varchar length is illegal: " + length);
+                return "VARCHAR(" + length + ")";
+            case CHARS:
+                if (length == 0)
+                    throw new IllegalArgumentException("char length is illegal: " + length);
+                return "CHAR(" + length + ")";
+            case DECIMAL:
+                if (length == 0)
+                    throw new IllegalArgumentException("decimal length is illegal: " + length);
+                return "DECIMAL(" + length + "," + dot + ")";
+            case DATE:
+                return "DATE";
+            case TIME:
+                return "TIME";
+            case TIMESTAMP:
+                return "TIMESTAMP";
+            case BINARY:
+                if (length == 0)
+                    throw new IllegalArgumentException("varchar length is illegal: " + length);
+                return "VARBINARY(" + length + ")";
+            default:
+                break;
+        }
+        throw new IllegalArgumentException("type is illegal: " + type);
     }
 
     @Override
@@ -74,9 +71,16 @@ public class SqlAssembleMysql implements SqlAssemble {
 
         // 开始组装列定义
         for (SqlColumnInfo column : tableInfo.getColumns()) {
-            if (column.isTableColumn())
-                buffer.appendColumnDefine(column, typeMapper).appendComma();
+            if (column.isTableColumn()) {
+                buffer.appendColumnDefine(column, this).appendComma();
+            }
         }
+
+        buffer.appendPrimaryKeys(tableInfo, tableInfo.getPrimaryKeys());
+        buffer.appendForeignKeys(factory, tableInfo, tableInfo.getForeignKeys());
+        buffer.appendUniques(tableInfo, tableInfo.getUniques());
+        buffer.appendChecks(tableInfo, tableInfo.getColumns());
+
         buffer.removeLast();
         buffer.appendRightBracket();
 
@@ -97,13 +101,20 @@ public class SqlAssembleMysql implements SqlAssemble {
                     .append(tableInfo.getIncrement());
         buffer.appendSemicolon();
 
-        return SqlAssemblePool.getPool().getAssembled(buffer.toString(), new ArrayList<>());
+        return SqlAssemblePool.getPool().getAssembled(buffer.toString(), SqlAssemblePool.EMPTY_GETTER);
     }
 
     @Override
     public SqlAssembled assembleCount(Condition condition) throws Exception {
+        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        buffer.appendSelect().appendSpace();
+        buffer.appendCount().appendSpace().appendFrom().appendSpace();
+        buffer.appendName(tableInfo.getName());
 
-        return null;
+        if (condition != null && condition.getWheres() != null && !condition.getWheres().isEmpty())
+            buffer.appendWheres(tableInfo, condition.getWheres());
+        buffer.appendSemicolon();
+        return SqlAssemblePool.getPool().getAssembled(buffer.toString(), SqlAssemblePool.EMPTY_GETTER);
     }
 
     @Override

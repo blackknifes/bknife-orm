@@ -10,6 +10,7 @@ import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.ForeignKey;
 import com.bknife.orm.annotion.Index;
 import com.bknife.orm.annotion.Unique;
+import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.mapper.select.SqlOrderBy;
 import com.bknife.orm.mapper.where.Condition;
 import com.bknife.orm.mapper.where.SqlWhere;
@@ -152,6 +153,10 @@ public class SqlAssembleBuffer {
         return append('%');
     }
 
+    public SqlAssembleBuffer appendSemicolon() {
+        return append(';');
+    }
+
     public SqlAssembleBuffer appendIn() {
         return append("IN");
     }
@@ -256,8 +261,16 @@ public class SqlAssembleBuffer {
         return append("RIGHT JOIN");
     }
 
-    public SqlAssembleBuffer appendCreateTableIfNotExist() {
-        return append("CREATE TABLE IF NOT EXISTS");
+    public SqlAssembleBuffer appendCreateTableIfNotExist(String tableName) {
+        return append("CREATE TABLE IF NOT EXISTS ").appendName(tableName);
+    }
+
+    public SqlAssembleBuffer appendNull() {
+        return append("NULL");
+    }
+
+    public SqlAssembleBuffer appendNotNull() {
+        return append("NOT NULL");
     }
 
     public SqlAssembleBuffer appendType(Column.Type type, Class<?> fieldType) throws Exception {
@@ -265,7 +278,7 @@ public class SqlAssembleBuffer {
             case AUTO:
                 if (fieldType == null)
                     throw new IllegalArgumentException("field type is not supported: " + fieldType);
-                return appendType(SqlTypeMapper.getSqlType(fieldType), null);
+                return appendType(SqlTypeUtil.getSqlType(fieldType), null);
             case BYTE:
                 return append("TINYINT");
             case INTEGER:
@@ -329,6 +342,29 @@ public class SqlAssembleBuffer {
             default:
                 throw new IllegalArgumentException("index method is not supported: " + method);
         }
+    }
+
+    public SqlAssembleBuffer appendColumnDefine(SqlColumnInfo columnInfo, SqlTypeMapper typeMapper) {
+        appendName(columnInfo.getName()).appendSpace();
+        Type type;
+        if ((type = columnInfo.getType()) == Type.AUTO)
+            type = SqlTypeUtil.getSqlType(columnInfo.getField().getType());
+        append(typeMapper.toString(type, columnInfo.getLength(), columnInfo.getDot()));
+        if (type == Type.STRING) {
+            if (!columnInfo.getCharset().isEmpty())
+                appendSpace().appendCharset().appendSpace().append(columnInfo.getCharset());
+            if (!columnInfo.getCollate().isEmpty())
+                appendSpace().appendCollate().appendSpace().append(columnInfo.getCollate());
+        }
+
+        appendSpace();
+        if (columnInfo.isNullable())
+            appendNull();
+        else
+            appendNotNull();
+        if (!columnInfo.getComment().isEmpty())
+            appendSpace().appendComment().appendString(columnInfo.getComment());
+        return this;
     }
 
     public SqlAssembleBuffer appendConstraint() {
@@ -520,24 +556,16 @@ public class SqlAssembleBuffer {
                         appendLessEqual();
                         break;
                     case LIKE_MATCH:
-                        appendRegexp().appendLeftBracket();
-                        appendValue(binary.getValue());
-                        appendRightBracket();
+                        appendSpace().appendRegexp(binary.getValue().toString());
                         return this;
                     case LIKE:
-                        appendSpace().appendLike().appendLeftBracket().appendPercent().appendStringWrap();
-                        append(binary.getValue());
-                        appendStringWrap().appendPercent().appendRightBracket();
+                        appendSpace().appendLike(binary.getValue().toString());
                         return this;
                     case LEFT_LIKE:
-                        appendSpace().appendLike().appendLeftBracket().appendPercent().appendStringWrap();
-                        append(binary.getValue());
-                        appendStringWrap().appendRightBracket();
+                        appendSpace().appendLeftLike(binary.getValue().toString());
                         return this;
                     case RIGHT_LIKE:
-                        appendSpace().appendLike().appendLeftBracket().appendStringWrap();
-                        append(binary.getValue());
-                        appendStringWrap().appendPercent().appendRightBracket();
+                        appendSpace().appendRightLike(binary.getValue().toString());
                         return this;
                     default:
                         throw new IllegalArgumentException(

@@ -78,7 +78,7 @@ public class SqlTableInfo implements SqlMapperInfo {
      * 
      * @return
      */
-    public Collection<SqlColumnInfo> getPromaryKeys() {
+    public Collection<SqlColumnInfo> getPrimaryKeys() {
         return primaryKeys;
     }
 

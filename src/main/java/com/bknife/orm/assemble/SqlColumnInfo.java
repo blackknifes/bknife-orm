@@ -140,7 +140,7 @@ public class SqlColumnInfo implements SqlElement {
      */
     public Type getType() {
         if (annotation.type() == Type.AUTO)
-            return SqlTypeMapper.getSqlType(field.getType());
+            return SqlTypeUtil.getSqlType(field.getType());
         return annotation.type();
     }
 

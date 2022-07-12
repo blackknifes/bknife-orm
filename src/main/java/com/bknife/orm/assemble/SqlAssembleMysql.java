@@ -289,7 +289,7 @@ public class SqlAssembleMysql implements SqlAssemble {
             buffer.space().collate().space().equal().space().append(tableInfo.getCollate());
 
         if (!tableInfo.getComment().isEmpty())
-            buffer.space().comment().space().equal().space().append(tableInfo.getComment());
+            buffer.space().comment().space().equal().space().string(tableInfo.getComment());
         if (tableInfo.getAutoIncrement() != 0)
             buffer.space().autoIncrement().space().equal().space().append(tableInfo.getAutoIncrement());
         buffer.semicolon();
@@ -352,6 +352,7 @@ public class SqlAssembleMysql implements SqlAssemble {
             getters.add(new SqlGetterValue(entry.getValue()));
         }
         buffer.removeLast();
+        buffer.space().where();
         appendWheres(buffer, condition.getWheres(), getters);
         buffer.semicolon();
         return new SqlAssembledImpl(buffer.toString(), getters);
@@ -380,7 +381,7 @@ public class SqlAssembleMysql implements SqlAssemble {
         buffer.leftBracket();
         for (SqlColumnInfo columnInfo : mapperInfo.getColumns())
             buffer.name(columnInfo.getName()).comma();
-        buffer.removeLast().space();
+        buffer.removeLast().rightBracket().space();
         buffer.values();
         buffer.leftBracket();
         for (SqlColumnInfo columnInfo : mapperInfo.getColumns())
@@ -400,8 +401,10 @@ public class SqlAssembleMysql implements SqlAssemble {
             SqlViewInfo viewInfo = (SqlViewInfo) mapperInfo;
             appendJoins(buffer, viewInfo.getJoins());
         }
-        if (condition.hasWheres())
+        if (condition.hasWheres()) {
+            buffer.space().where();
             appendWheres(buffer, condition.getWheres(), getters);
+        }
         if (condition.hasOrderList())
             appendOrderByList(buffer, condition.getOrderList());
         if (condition.hasLimit())
@@ -476,7 +479,6 @@ public class SqlAssembleMysql implements SqlAssemble {
                     default:
                         break;
                 }
-                buffer.space();
                 appendWhere(buffer, logic.getWhere(), getters);
                 break;
             }
@@ -496,7 +498,7 @@ public class SqlAssembleMysql implements SqlAssemble {
             case BINARY: {
                 SqlWhereBinary binary = (SqlWhereBinary) where;
                 SqlColumnInfo columnInfo = mapperInfo.getColumn(binary.getColumn());
-                buffer.name(columnInfo.getTableName()).dot().name(columnInfo.getName());
+                buffer.name(columnInfo.getTableName()).dot().name(columnInfo.getName()).space();
                 switch (binary.getBinaryType()) {
                     case EQUAL:
                         buffer.equal();
@@ -531,7 +533,7 @@ public class SqlAssembleMysql implements SqlAssemble {
                     default:
                         break;
                 }
-                buffer.question();
+                buffer.space().question();
                 getters.add(new SqlGetterValue(binary.getValue()));
                 break;
             }
@@ -562,6 +564,7 @@ public class SqlAssembleMysql implements SqlAssemble {
     }
 
     private void appendOrderByList(SqlAssembleBuffer buffer, Iterable<SqlOrderBy> orderBies) {
+        buffer.space();
         boolean first = true;
         for (SqlOrderBy sqlOrderBy : orderBies) {
             if (first) {
@@ -581,6 +584,6 @@ public class SqlAssembleMysql implements SqlAssemble {
     }
 
     private void appendLimit(SqlAssembleBuffer buffer, SqlLimit limit) {
-        buffer.append("LIMIT ").append(limit.getOffset()).comma().append(limit.getTotal());
+        buffer.space().append("LIMIT ").append(limit.getOffset()).comma().append(limit.getTotal());
     }
 }

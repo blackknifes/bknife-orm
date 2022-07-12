@@ -11,16 +11,17 @@ import javax.sql.DataSource;
 import com.bknife.orm.PageResult;
 import com.bknife.orm.annotion.Column;
 import com.bknife.orm.assemble.SqlAssemble;
+import com.bknife.orm.assemble.assembled.SqlAssembled;
 import com.bknife.orm.mapper.where.Condition;
 
 public class ViewMapper<T> implements Mapper<T> {
-    private SqlAssemble<T> assemble;
+    private SqlAssemble assemble;
     private DataSource dataSource;
     private ArrayList<String> primaryKeys;
 
     private boolean showSql = false;
 
-    public ViewMapper(SqlAssemble<T> assemble, DataSource dataSource, boolean showSql) {
+    public ViewMapper(SqlAssemble assemble, DataSource dataSource, boolean showSql) {
         this.assemble = assemble;
         this.dataSource = dataSource;
         this.showSql = showSql;
@@ -76,7 +77,8 @@ public class ViewMapper<T> implements Mapper<T> {
 
     @Override
     public int total(Condition condition) throws Exception {
-        try (SqlConnection conn = getConnection(assemble.assembleCount(condition))) {
+        SqlAssembled assembled = assemble.assembleCount(condition);
+        try (SqlConnection conn = getConnection(assembled)) {
             conn.executeQuery();
             ResultSet resultSet = conn.getResultSet();
             if (resultSet.next())
@@ -195,9 +197,9 @@ public class ViewMapper<T> implements Mapper<T> {
         throw new Exception("not implemented");
     }
 
-    private SqlConnection getConnection(String sql) throws Exception {
+    private SqlConnection getConnection(SqlAssembled assembled) throws Exception {
         if (showSql)
-            System.out.println(sql);
-        return SqlConnection.Create(dataSource, sql);
+            System.out.println(assembled.getSql());
+        return SqlConnection.Create(dataSource, assembled.getSql());
     }
 }

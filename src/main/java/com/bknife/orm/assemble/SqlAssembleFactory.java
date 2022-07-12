@@ -9,5 +9,5 @@ public interface SqlAssembleFactory {
      * 
      * @return
      */
-    public SqlAssemble getAssemble(SqlContext context, Class<?> mapperClass);
+    public SqlAssemble getAssemble(SqlContext context, Class<?> mapperClass) throws Exception;
 }

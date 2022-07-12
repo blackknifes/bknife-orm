@@ -1,5 +1,6 @@
 package com.bknife.orm.assemble.assembled;
 
+import java.lang.reflect.Constructor;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Collection;
@@ -43,7 +44,9 @@ public class SqlAssembledQueryImpl implements SqlAssembledQuery {
 
     @Override
     public Object createFromResultSet(ResultSet resultSet) throws Exception {
-        Object object = type.newInstance();
+        Constructor<?> constructor = type.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        Object object = constructor.newInstance();
         int i = 0;
         for (SqlSetter setter : setters) {
             if (setter != null)
@@ -57,5 +60,10 @@ public class SqlAssembledQueryImpl implements SqlAssembledQuery {
         int i = 0;
         for (SqlGetter getter : getters)
             preparedStatement.setObject(++i, getter.getValue(object));
+    }
+
+    @Override
+    public String toString() {
+        return "SqlAssembledQueryImpl [sql=" + sql + ", type=" + type + "]";
     }
 }

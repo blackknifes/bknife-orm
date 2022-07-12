@@ -15,6 +15,15 @@ public class SqlFactoryImpl implements SqlFactory {
     private final Map<String, SqlAssembleFactory> assembleFactories = new HashMap<String, SqlAssembleFactory>();
 
     @Override
+    public void addSupported(String sqlType, SqlAssembleFactory factory) {
+        assembleFactories.put(sqlType, factory);
+    }
+
+    public SqlFactoryImpl() {
+        addSupported("mysql", new SqlAssembleMysqlFactory());
+    }
+
+    @Override
     public SqlAssemble getAssemble(SqlContext context, Class<?> mapperClass, String sqlType) throws Exception {
         SqlAssembleFactory factory = assembleFactories.get(sqlType);
         if (factory == null)
@@ -29,6 +38,7 @@ public class SqlFactoryImpl implements SqlFactory {
             // 创建表映射
             List<SqlTableColumnInfo.Builder> columnBuilders = new ArrayList<SqlTableColumnInfo.Builder>();
             for (Field field : mapperClass.getDeclaredFields()) {
+                field.setAccessible(true);
                 Column column = field.getDeclaredAnnotation(Column.class);
                 if (column == null)
                     continue;

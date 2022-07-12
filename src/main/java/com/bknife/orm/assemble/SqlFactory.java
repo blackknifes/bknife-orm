@@ -1,12 +1,17 @@
 package com.bknife.orm.assemble;
 
-import java.lang.reflect.Field;
-
 /**
  * sql工厂
  */
 public interface SqlFactory {
-    
+
+    /**
+     * 添加支持
+     * 
+     * @param factory
+     */
+    public void addSupported(String sqlType, SqlAssembleFactory factory);
+
     /**
      * 创建组装器
      * 

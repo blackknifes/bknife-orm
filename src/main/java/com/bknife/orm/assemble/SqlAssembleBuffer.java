@@ -10,7 +10,7 @@ public class SqlAssembleBuffer {
 
     @Override
     public String toString() {
-        return toString();
+        return buffer.toString();
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.bknife.orm.assemble;
 
-import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.assemble.assembled.SqlAssembled;
 import com.bknife.orm.assemble.assembled.SqlAssembledQuery;
 import com.bknife.orm.mapper.Updater;

@@ -33,4 +33,9 @@ public class SqlAssembledImpl implements SqlAssembled {
                 preparedStatement.setObject(++i, getter.getValue(object));
         }
     }
+
+    @Override
+    public String toString() {
+        return "SqlAssembledImpl [sql=" + sql + "]";
+    }
 }

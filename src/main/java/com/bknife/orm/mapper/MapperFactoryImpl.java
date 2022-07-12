@@ -12,16 +12,17 @@ import com.bknife.orm.annotion.Join;
 import com.bknife.orm.annotion.Table;
 import com.bknife.orm.annotion.View;
 import com.bknife.orm.assemble.SqlAssemble;
-import com.bknife.orm.assemble.SqlFactory;
+import com.bknife.orm.assemble.SqlConstants;
+import com.bknife.orm.assemble.SqlContext;
 
-public class MapperFactoryImpl implements MapperFactory {
+public class MapperFactoryImpl implements MapperFactory, SqlConstants {
     private Map<Class<?>, SqlAssemble> assembles = new HashMap<Class<?>, SqlAssemble>();
     private Map<Class<?>, Map<DataSource, Mapper<?>>> mappers = new HashMap<Class<?>, Map<DataSource, Mapper<?>>>();
-    private SqlFactory sqlAssembleFactory;
+    private SqlContext context;
     private boolean showSql = false;
 
-    public MapperFactoryImpl(SqlFactory sqlAssembleFactory, boolean showSql) {
-        this.sqlAssembleFactory = sqlAssembleFactory;
+    public MapperFactoryImpl(SqlContext context, boolean showSql) {
+        this.context = context;
         this.showSql = showSql;
     }
 
@@ -40,7 +41,7 @@ public class MapperFactoryImpl implements MapperFactory {
     private <T> SqlAssemble getAssemble(Class<T> clazz) throws Exception {
         if (assembles.containsKey(clazz))
             return (SqlAssemble) assembles.get(clazz);
-        SqlAssemble assemble = sqlAssembleFactory.getAssemble(clazz);
+        SqlAssemble assemble = context.getAssemble(clazz, MYSQL);
         assembles.put(clazz, assemble);
         return assemble;
     }

@@ -11,14 +11,6 @@ import com.bknife.orm.mapper.where.Condition;
  */
 public interface SqlAssemble {
     /**
-     * 从type获取类型
-     * 
-     * @param type
-     * @return
-     */
-    public String getTypeString(Type type, int length, int dot);
-
-    /**
      * 获取结果类
      * 
      * @return

@@ -12,15 +12,15 @@ import com.bknife.orm.annotion.Join;
 import com.bknife.orm.annotion.Table;
 import com.bknife.orm.annotion.View;
 import com.bknife.orm.assemble.SqlAssemble;
-import com.bknife.orm.assemble.SqlAssembleFactory;
+import com.bknife.orm.assemble.SqlFactory;
 
 public class MapperFactoryImpl implements MapperFactory {
-    private Map<Class<?>, SqlAssemble<?>> assembles = new HashMap<Class<?>, SqlAssemble<?>>();
+    private Map<Class<?>, SqlAssemble> assembles = new HashMap<Class<?>, SqlAssemble>();
     private Map<Class<?>, Map<DataSource, Mapper<?>>> mappers = new HashMap<Class<?>, Map<DataSource, Mapper<?>>>();
-    private SqlAssembleFactory sqlAssembleFactory;
+    private SqlFactory sqlAssembleFactory;
     private boolean showSql = false;
 
-    public MapperFactoryImpl(SqlAssembleFactory sqlAssembleFactory, boolean showSql) {
+    public MapperFactoryImpl(SqlFactory sqlAssembleFactory, boolean showSql) {
         this.sqlAssembleFactory = sqlAssembleFactory;
         this.showSql = showSql;
     }
@@ -37,10 +37,10 @@ public class MapperFactoryImpl implements MapperFactory {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> SqlAssemble<T> getAssemble(Class<T> clazz) throws Exception {
+    private <T> SqlAssemble getAssemble(Class<T> clazz) throws Exception {
         if (assembles.containsKey(clazz))
-            return (SqlAssemble<T>) assembles.get(clazz);
-        SqlAssemble<T> assemble = sqlAssembleFactory.getAssemble(clazz);
+            return (SqlAssemble) assembles.get(clazz);
+        SqlAssemble assemble = sqlAssembleFactory.getAssemble(clazz);
         assembles.put(clazz, assemble);
         return assemble;
     }

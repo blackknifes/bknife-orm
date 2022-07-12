@@ -1,7 +1,13 @@
 package com.bknife.orm.assemble;
 
+/**
+ * assemble工厂
+ */
 public interface SqlAssembleFactory {
-    public SqlAssemble getAssemble(Class<?> clazz) throws Exception;
-
-    public SqlMapperInfo getMapperInfo(Class<?> clazz) throws Exception;
+    /**
+     * 获取组装器
+     * 
+     * @return
+     */
+    public SqlAssemble getAssemble(SqlContext context, Class<?> mapperClass);
 }

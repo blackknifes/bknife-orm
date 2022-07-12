@@ -2,25 +2,10 @@ package com.bknife.orm.assemble;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
 
-import com.bknife.orm.annotion.Check;
-import com.bknife.orm.annotion.Column;
-import com.bknife.orm.annotion.Column.Type;
-import com.bknife.orm.annotion.ForeignKey;
-import com.bknife.orm.annotion.Index;
-import com.bknife.orm.annotion.Unique;
-import com.bknife.orm.mapper.select.SqlOrderBy;
-import com.bknife.orm.mapper.where.Condition;
-import com.bknife.orm.mapper.where.SqlWhere;
-import com.bknife.orm.mapper.where.SqlWhereBinary;
-import com.bknife.orm.mapper.where.SqlWhereIn;
-import com.bknife.orm.mapper.where.SqlWhereLogic;
-import com.bknife.orm.mapper.where.SqlWhereUnary;
-
 public class SqlAssembleBuffer {
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     private StringBuffer buffer = new StringBuffer();
 
     @Override
@@ -58,399 +43,354 @@ public class SqlAssembleBuffer {
         return this;
     }
 
-    public SqlAssembleBuffer appendSpace() {
+    public SqlAssembleBuffer space() {
         return append(' ');
     }
 
-    public SqlAssembleBuffer appendSelect() {
+    public SqlAssembleBuffer select() {
         return append("SELECT");
     }
 
-    public SqlAssembleBuffer appendFrom() {
+    public SqlAssembleBuffer from() {
         return append("FROM");
     }
 
-    public SqlAssembleBuffer appendWhere() {
+    public SqlAssembleBuffer where() {
         return append("WHERE");
     }
 
-    public SqlAssembleBuffer appendAs() {
+    public SqlAssembleBuffer as() {
         return append("AS");
     }
 
-    public SqlAssembleBuffer appendInsertInto() {
+    public SqlAssembleBuffer insertInto() {
         return append("INSERT INTO");
     }
 
-    public SqlAssembleBuffer appendReplaceInto() {
+    public SqlAssembleBuffer into() {
+        return append("INTO");
+    }
+
+    public SqlAssembleBuffer replaceInto() {
         return append("REPLACE INTO");
     }
 
-    public SqlAssembleBuffer appendDeleteFrom() {
+    public SqlAssembleBuffer deleteFrom() {
         return append("DELETE FROM");
     }
 
-    public SqlAssembleBuffer appendUpdate() {
+    public SqlAssembleBuffer update() {
         return append("UPDATE");
     }
 
-    public SqlAssembleBuffer appendSet() {
+    public SqlAssembleBuffer set() {
         return append("SET");
     }
 
-    public SqlAssembleBuffer appendLike() {
+    public SqlAssembleBuffer like() {
         return append("LIKE");
     }
 
-    public SqlAssembleBuffer appendLike(Object value) {
-        return appendLike().appendLeftBracket().appendStringWrap().appendPercent().append(value).appendPercent()
-                .appendStringWrap().appendRightBracket();
+    public SqlAssembleBuffer like(Object value) {
+        return like().leftBracket().stringWrap().percent().append(value).percent()
+                .stringWrap().rightBracket();
     }
 
-    public SqlAssembleBuffer appendLeftLike(Object value) {
-        return appendLike().appendLeftBracket().appendStringWrap().appendPercent().append(value).appendStringWrap()
-                .appendRightBracket();
+    public SqlAssembleBuffer leftLike(Object value) {
+        return like().leftBracket().stringWrap().percent().append(value).stringWrap()
+                .rightBracket();
     }
 
-    public SqlAssembleBuffer appendRightLike(Object value) {
-        return appendLike().appendLeftBracket().appendStringWrap().append(value).appendPercent().appendStringWrap()
-                .appendRightBracket();
+    public SqlAssembleBuffer rightLike(Object value) {
+        return like().leftBracket().stringWrap().append(value).percent().stringWrap()
+                .rightBracket();
     }
 
-    public SqlAssembleBuffer appendRegexp() {
+    public SqlAssembleBuffer regexp() {
         return append("REGEXP");
     }
 
-    public SqlAssembleBuffer appendRegexp(String str) {
-        return appendRegexp().appendLeftBracket().appendString(str).appendRightBracket();
+    public SqlAssembleBuffer regexp(Object str) {
+        return regexp().bracket(str);
     }
 
-    public SqlAssembleBuffer appendEqual() {
+    public SqlAssembleBuffer equal() {
         return append("=");
     }
 
-    public SqlAssembleBuffer appendNotEqual() {
+    public SqlAssembleBuffer notEqual() {
         return append("<>");
     }
 
-    public SqlAssembleBuffer appendLess() {
+    public SqlAssembleBuffer less() {
         return append("<");
     }
 
-    public SqlAssembleBuffer appendLessEqual() {
+    public SqlAssembleBuffer lessEqual() {
         return append("<=");
     }
 
-    public SqlAssembleBuffer appendGreater() {
+    public SqlAssembleBuffer greater() {
         return append(">");
     }
 
-    public SqlAssembleBuffer appendGreaterEqual() {
+    public SqlAssembleBuffer greaterEqual() {
         return append(">=");
     }
 
-    public SqlAssembleBuffer appendPercent() {
+    public SqlAssembleBuffer percent() {
         return append('%');
     }
 
-    public SqlAssembleBuffer appendSemicolon() {
+    public SqlAssembleBuffer semicolon() {
         return append(';');
     }
 
-    public SqlAssembleBuffer appendIn() {
+    public SqlAssembleBuffer question() {
+        return append('?');
+    }
+
+    public SqlAssembleBuffer in() {
         return append("IN");
     }
 
-    public SqlAssembleBuffer appendAnd() {
+    public SqlAssembleBuffer and() {
         return append("AND");
     }
 
-    public SqlAssembleBuffer appendOr() {
+    public SqlAssembleBuffer or() {
         return append("OR");
     }
 
-    public SqlAssembleBuffer appendNot() {
+    public SqlAssembleBuffer not() {
         return append("NOT");
     }
 
-    public SqlAssembleBuffer appendIsNull() {
+    public SqlAssembleBuffer isNull() {
         return append("ISNULL");
     }
 
-    public SqlAssembleBuffer appendGroupBy() {
+    public SqlAssembleBuffer isNullName(Object name) {
+        return append("ISNULL").leftBracket().name(name.toString()).rightBracket();
+    }
+
+    public SqlAssembleBuffer isNull(Object name) {
+        return append("ISNULL").bracket(name);
+    }
+
+    public SqlAssembleBuffer groupBy() {
         return append("GROUP BY");
     }
 
-    public SqlAssembleBuffer appendDistinct() {
+    public SqlAssembleBuffer distinct() {
         return append("DISTINCT");
     }
 
-    public SqlAssembleBuffer appendCount() {
-        return append("COUNT(*)");
+    public SqlAssembleBuffer count() {
+        return append("COUNT");
     }
 
-    public SqlAssembleBuffer appendSum() {
+    public SqlAssembleBuffer countName(Object name) {
+        return append("COUNT").leftBracket().name(name.toString()).rightBracket();
+    }
+
+    public SqlAssembleBuffer count(Object name) {
+        return append("COUNT").bracket(name);
+    }
+
+    public SqlAssembleBuffer sum() {
         return append("SUM");
     }
 
-    public SqlAssembleBuffer appendAvg() {
+    public SqlAssembleBuffer sum(Object str) {
+        return append("SUM").bracket(str);
+    }
+
+    public SqlAssembleBuffer sumName(Object name) {
+        return append("SUM").leftBracket().name(name.toString()).rightBracket();
+    }
+
+    public SqlAssembleBuffer avg() {
         return append("AVG");
     }
 
-    public SqlAssembleBuffer appendComma() {
+    public SqlAssembleBuffer avg(Object str) {
+        return append("AVG").bracket(str);
+    }
+
+    public SqlAssembleBuffer avgName(Object name) {
+        return append("AVG").leftBracket().name(name.toString()).rightBracket();
+    }
+
+    public SqlAssembleBuffer comma() {
         return append(',');
     }
 
-    public SqlAssembleBuffer appendNameWrap() {
+    public SqlAssembleBuffer nameWrap() {
         return append('`');
     }
 
-    public SqlAssembleBuffer appendName(String name) {
-        return append('`').append(name).append('`');
+    public SqlAssembleBuffer name(String name) {
+        return nameWrap().append(name).nameWrap();
     }
 
-    public SqlAssembleBuffer appendStringWrap() {
+    public SqlAssembleBuffer stringWrap() {
         return append('"');
     }
 
-    public SqlAssembleBuffer appendString(String str) {
-        return appendStringWrap().append(str).appendStringWrap();
+    public SqlAssembleBuffer string(Object str) {
+        return stringWrap().append(str).stringWrap();
     }
 
-    public SqlAssembleBuffer appendDot() {
+    public SqlAssembleBuffer dot() {
         return append('.');
     }
 
-    public SqlAssembleBuffer appendLeftBracket() {
+    public SqlAssembleBuffer leftBracket() {
         return append('(');
     }
 
-    public SqlAssembleBuffer appendRightBracket() {
+    public SqlAssembleBuffer rightBracket() {
         return append(')');
     }
 
-    public SqlAssembleBuffer appendOrderBy() {
+    public SqlAssembleBuffer bracket(Object str) {
+        return leftBracket().append(str).rightBracket();
+    }
+
+    public SqlAssembleBuffer orderBy() {
         return append("ORDER BY");
     }
 
-    public SqlAssembleBuffer appendAsc() {
+    public SqlAssembleBuffer asc() {
         return append("ASC");
     }
 
-    public SqlAssembleBuffer appendDesc() {
+    public SqlAssembleBuffer desc() {
         return append("DESC");
     }
 
-    public SqlAssembleBuffer appendJoin() {
+    public SqlAssembleBuffer join() {
         return append("JOIN");
     }
 
-    public SqlAssembleBuffer appendOuterJoin() {
+    public SqlAssembleBuffer outerJoin() {
         return append("OUTER JOIN");
     }
 
-    public SqlAssembleBuffer appendInnerJoin() {
+    public SqlAssembleBuffer innerJoin() {
         return append("INNER JOIN");
     }
 
-    public SqlAssembleBuffer appendLeftJoin() {
+    public SqlAssembleBuffer leftJoin() {
         return append("LEFT JOIN");
     }
 
-    public SqlAssembleBuffer appendRightJoin() {
+    public SqlAssembleBuffer rightJoin() {
         return append("RIGHT JOIN");
     }
 
-    public SqlAssembleBuffer appendCreateTableIfNotExist(String tableName) {
-        return append("CREATE TABLE IF NOT EXISTS ").appendName(tableName);
+    public SqlAssembleBuffer createTableIfNotExist(String tableName) {
+        return append("CREATE TABLE IF NOT EXISTS").name(tableName);
     }
 
-    public SqlAssembleBuffer appendNull() {
+    public SqlAssembleBuffer nullToken() {
         return append("NULL");
     }
 
-    public SqlAssembleBuffer appendNotNull() {
+    public SqlAssembleBuffer notNull() {
         return append("NOT NULL");
     }
 
-    public SqlAssembleBuffer appendType(Column.Type type, Class<?> fieldType) throws Exception {
-        switch (type) {
-            case AUTO:
-                if (fieldType == null)
-                    throw new IllegalArgumentException("field type is not supported: " + fieldType);
-                return appendType(SqlTypeUtil.getSqlType(fieldType), null);
-            case BYTE:
-                return append("TINYINT");
-            case INTEGER:
-                return append("INT");
-            case LONG:
-                return append("LONG");
-            case DOUBLE:
-                return append("DOUBLE");
-            case STRING:
-                return append("STRING");
-            case CHARS:
-                return append("CHAR");
-            case DECIMAL:
-                return append("DECIMAL");
-            case DATE:
-                return append("DATE");
-            case TIME:
-                return append("TIME");
-            case TIMESTAMP:
-                return append("TIMESTAMP");
-            case BINARY:
-                return append("VARBINARY");
-            default:
-                throw new IllegalArgumentException("type is not supported: " + type);
-        }
-    }
-
-    public SqlAssembleBuffer appendPrimaryKey() {
+    public SqlAssembleBuffer primaryKey() {
         return append("PRIMARY KEY");
     }
 
-    public SqlAssembleBuffer appendIndex() {
+    public SqlAssembleBuffer index() {
         return append("INDEX");
     }
 
-    public SqlAssembleBuffer appendUsing() {
+    public SqlAssembleBuffer using() {
         return append("USING");
     }
 
-    public SqlAssembleBuffer appendIndexType(Index.IndexType type) {
-        switch (type) {
-            case NORMAL:
-                return this;
-            case FULLTEXT:
-                return append("FULLTEXT");
-            case SPATIAL:
-                return append("SPATIAL");
-            case UNIQUE:
-                return append("UNIQUE");
-            default:
-                throw new IllegalArgumentException("index type is not supported: " + type);
-        }
-    }
-
-    public SqlAssembleBuffer appendIndexMethod(Index.IndexMethod method) {
-        switch (method) {
-            case BTREE:
-                return append("BTREE");
-            case HASH:
-                return append("HASH");
-            default:
-                throw new IllegalArgumentException("index method is not supported: " + method);
-        }
-    }
-
-    public SqlAssembleBuffer appendColumnDefine(SqlColumnInfo columnInfo, SqlAssemble assemble) {
-        appendName(columnInfo.getName()).appendSpace();
-        Type type;
-        if ((type = columnInfo.getType()) == Type.AUTO)
-            type = SqlTypeUtil.getSqlType(columnInfo.getField().getType());
-        append(assemble.getTypeString(type, columnInfo.getLength(), columnInfo.getDot()));
-        if (type == Type.STRING) {
-            if (!columnInfo.getCharset().isEmpty())
-                appendSpace().appendCharset().appendSpace().append(columnInfo.getCharset());
-            if (!columnInfo.getCollate().isEmpty())
-                appendSpace().appendCollate().appendSpace().append(columnInfo.getCollate());
-        }
-
-        appendSpace();
-        if (columnInfo.isNullable())
-            appendNull();
-        else
-            appendNotNull();
-        if (!columnInfo.getComment().isEmpty())
-            appendSpace().appendComment().appendString(columnInfo.getComment());
-        return this;
-    }
-
-    public SqlAssembleBuffer appendConstraint() {
+    public SqlAssembleBuffer constraint() {
         return append("CONSTRAINT");
     }
 
-    public SqlAssembleBuffer appendForeignKey() {
+    public SqlAssembleBuffer foreignKey() {
         return append("FOREIGN KEY");
     }
 
-    public SqlAssembleBuffer appendReferences() {
+    public SqlAssembleBuffer references() {
         return append("REFERENCES");
     }
 
-    public SqlAssembleBuffer appendOnDelete() {
+    public SqlAssembleBuffer onDelete() {
         return append("ON DELETE");
     }
 
-    public SqlAssembleBuffer appendOnUpdate() {
+    public SqlAssembleBuffer onUpdate() {
         return append("ON UPDATE");
     }
 
-    public SqlAssembleBuffer appendForeignKeyAction(ForeignKey.ForeignKeyAction action) {
-        switch (action) {
-            case CASCADE:
-                return append("CASCADE");
-            case NO_ACTION:
-                return append("NO ACTION");
-            case RESTRICT:
-                return append("RESTRICT");
-            case SET_NULL:
-                return append("SET NULL");
-            default:
-                throw new IllegalArgumentException("Foreign Key Action is not supported: " + action);
-        }
-    }
-
-    public SqlAssembleBuffer appendUnsigned() {
+    public SqlAssembleBuffer unsigned() {
         return append("UNSIGNED");
     }
 
-    public SqlAssembleBuffer appendComment() {
+    public SqlAssembleBuffer comment() {
         return append("COMMENT");
     }
 
-    public SqlAssembleBuffer appendAutoIncrement() {
+    public SqlAssembleBuffer autoIncrement() {
         return append("AUTO_INCREMENT");
     }
 
-    public SqlAssembleBuffer appendZeroFill() {
+    public SqlAssembleBuffer zeroFill() {
         return append("ZEROFILL");
     }
 
-    public SqlAssembleBuffer appendCharset() {
+    public SqlAssembleBuffer charset() {
         return append("CHARACTER SET");
     }
 
-    public SqlAssembleBuffer appendCollate() {
+    public SqlAssembleBuffer collate() {
         return append("COLLATE");
     }
 
-    public SqlAssembleBuffer appendEngine() {
+    public SqlAssembleBuffer engine() {
         return append("ENGINE");
     }
 
-    public SqlAssembleBuffer appendStorage() {
+    public SqlAssembleBuffer storage() {
         return append("STORAGE");
     }
 
-    public SqlAssembleBuffer appendCompression() {
+    public SqlAssembleBuffer compression() {
         return append("COMPRESSION");
     }
 
-    public SqlAssembleBuffer appendUnique() {
+    public SqlAssembleBuffer unique() {
         return append("UNIQUE");
     }
 
-    public SqlAssembleBuffer appendCheck() {
+    public SqlAssembleBuffer check() {
         return append("CHECK");
     }
 
-    public SqlAssembleBuffer appendValue(Object object) {
+    public SqlAssembleBuffer defaultToken() {
+        return append("DEFAULT");
+    }
+
+    public SqlAssembleBuffer values() {
+        return append("VALUES");
+    }
+
+    public SqlAssembleBuffer value(Object object) {
         if (object instanceof String)
-            return appendStringWrap().append(object).appendStringWrap();
+            return stringWrap().append(object).stringWrap();
         else if (object instanceof Date)
-            return appendStringWrap().append(dateFormat.format((Date) object)).appendStringWrap();
+            return stringWrap().append(dateFormat.format((Date) object)).stringWrap();
 
         return append(object);
     }
@@ -460,335 +400,12 @@ public class SqlAssembleBuffer {
         return this;
     }
 
-    public SqlAssembleBuffer appendTableName(String name) {
-        return appendNameWrap().append(name).appendNameWrap();
+    public SqlAssembleBuffer fullName(String tableName, String name) {
+        name(tableName).dot();
+        return name(name);
     }
 
-    public SqlAssembleBuffer appendColumnName(String name) {
-        return appendNameWrap().append(name).appendNameWrap();
-    }
-
-    public SqlAssembleBuffer appendColumnName(SqlMapperInfo mapperInfo, String name) {
-        if (mapperInfo instanceof SqlTableInfo) {
-            SqlColumnInfo columnInfo = ((SqlTableInfo) mapperInfo).getColumn(name);
-            return append(columnInfo.getSqlName());
-        }
-        return appendColumnName(name);
-    }
-
-    public SqlAssembleBuffer appendColumnFullName(String tableName, String name) {
-        appendNameWrap().append(tableName).appendNameWrap();
-        appendDot();
-        return appendNameWrap().append(name).appendNameWrap();
-    }
-
-    public SqlAssembleBuffer appendColumnFullName(SqlMapperInfo mapperInfo, String name) {
-        return appendColumnFullName(mapperInfo.getName(), name);
-    }
-
-    public SqlAssembleBuffer appendColumnSql(String sql, String name) {
-        appendLeftBracket().append(sql).appendRightBracket();
-        appendSpace().appendAs().appendSpace();
-        return appendNameWrap().append(name).appendNameWrap();
-    }
-
-    public SqlAssembleBuffer appendWheres(SqlTableInfo tableInfo, Collection<SqlWhere> wheres) throws Exception {
-        for (SqlWhere where : wheres)
-            return appendWhere(tableInfo, where).appendSpace();
-        if (!wheres.isEmpty())
-            removeLast();
-        return this;
-    }
-
-    public SqlAssembleBuffer appendWhere(SqlTableInfo tableInfo, SqlWhere where) throws Exception {
-        switch (where.getWhereType()) {
-            case LOGIC: {
-                SqlWhereLogic logic = (SqlWhereLogic) where;
-                switch (logic.getLogicType()) {
-                    case AND:
-                        appendAnd().appendSpace();
-                        break;
-                    case OR:
-                        appendOr().appendSpace();
-                        break;
-                    case NOT:
-                        appendNot().appendSpace();
-                        break;
-                    default:
-                        throw new IllegalArgumentException("logic where type is error type: " + logic.getLogicType());
-                }
-                appendWhere(tableInfo, logic.getWhere());
-                break;
-            }
-            case UNARY: {
-                SqlWhereUnary unary = (SqlWhereUnary) where;
-                switch (unary.getUnaryType()) {
-                    case IS_NULL:
-                        appendIsNull().appendLeftBracket();
-                        appendColumnFullName(tableInfo, unary.getColumn());
-                        appendRightBracket();
-                        break;
-                    default:
-                        throw new IllegalArgumentException("unary where type is error type: " + unary.getUnaryType());
-                }
-                break;
-            }
-            case BINARY: {
-                SqlWhereBinary binary = (SqlWhereBinary) where;
-                appendColumnFullName(tableInfo, binary.getColumn());
-                switch (binary.getBinaryType()) {
-                    case EQUAL:
-                        appendEqual();
-                        break;
-                    case NOT_EQUAL:
-                        appendNotEqual();
-                        break;
-                    case GREATER:
-                        appendGreater();
-                        break;
-                    case GREATER_EQUAL:
-                        appendGreaterEqual();
-                        break;
-                    case LESS:
-                        appendLess();
-                        break;
-                    case LESS_EQUAL:
-                        appendLessEqual();
-                        break;
-                    case LIKE_MATCH:
-                        appendSpace().appendRegexp(binary.getValue().toString());
-                        return this;
-                    case LIKE:
-                        appendSpace().appendLike(binary.getValue().toString());
-                        return this;
-                    case LEFT_LIKE:
-                        appendSpace().appendLeftLike(binary.getValue().toString());
-                        return this;
-                    case RIGHT_LIKE:
-                        appendSpace().appendRightLike(binary.getValue().toString());
-                        return this;
-                    default:
-                        throw new IllegalArgumentException(
-                                "binary where type is error type: " + binary.getBinaryType());
-                }
-                appendValue(binary.getValue());
-                break;
-            }
-            case IN: {
-                SqlWhereIn in = (SqlWhereIn) where;
-                appendColumnFullName(tableInfo, in.getColumn());
-                appendSpace().appendIn().appendLeftBracket();
-                if (in.getValues().isEmpty())
-                    throw new IllegalArgumentException("values of sql where in cannot be empty");
-                for (Object value : in.getValues())
-                    appendValue(value).appendComma();
-                removeLast();
-                appendRightBracket();
-                break;
-            }
-            case CONDITION:
-                appendWhere(tableInfo, (Condition) where);
-                break;
-            default:
-                break;
-        }
-
-        return this;
-    }
-
-    public SqlAssembleBuffer appendOrderBy(SqlMapperInfo mapperInfo, Collection<SqlOrderBy> orderBys) {
-        if (orderBys.isEmpty())
-            return this;
-
-        appendSpace().appendOrderBy().appendSpace();
-        for (SqlOrderBy orderBy : orderBys) {
-            appendColumnFullName(mapperInfo, orderBy.getColumn()).appendSpace();
-            if (orderBy.isAsc())
-                appendAsc();
-            else
-                appendDesc();
-            appendComma();
-        }
-        removeLast();
-        return this;
-    }
-
-    public SqlAssembleBuffer appendPrimaryKeys(SqlMapperInfo mapperInfo, Collection<SqlColumnInfo> primaryKeys) {
-        if (primaryKeys.isEmpty())
-            return this;
-
-        appendConstraint().appendSpace();
-        appendNameWrap();
-        append("pk_").append(mapperInfo.getName()).append("_");
-        for (SqlColumnInfo primaryKey : primaryKeys)
-            append(primaryKey.getName()).append("_");
-        removeLast();
-        appendNameWrap();
-
-        appendSpace().appendPrimaryKey();
-        appendLeftBracket();
-
-        for (SqlColumnInfo primaryKey : primaryKeys) {
-            append(primaryKey.getSqlName()).appendComma();
-        }
-        removeLast();
-        appendRightBracket();
-        appendComma();
-        return this;
-    }
-
-    public SqlAssembleBuffer appendForeignKey(SqlAssembleFactory factory, SqlMapperInfo mapperInfo,
-            ForeignKey foreignKey) throws Exception {
-        appendSpace().appendConstraint().appendSpace().appendNameWrap();
-        append("fk_").append(mapperInfo.getName()).append("_");
-        for (String source : foreignKey.sources())
-            append(source).append("_");
-        for (String source : foreignKey.sources())
-            append(source).append("_");
-        removeLast();
-        appendNameWrap();
-        appendSpace().appendForeignKey().appendSpace();
-        appendLeftBracket();
-        for (String source : foreignKey.sources())
-            appendName(source).appendComma();
-        removeLast();
-        appendRightBracket();
-
-        appendSpace().appendReferences().appendSpace();
-        if (foreignKey.tableClass() != Object.class)
-            appendName(factory.getMapperInfo(foreignKey.tableClass()).getName());
-        else
-            appendName(foreignKey.table());
-
-        appendSpace().appendLeftBracket();
-        for (String target : foreignKey.targets())
-            appendName(target).appendComma();
-        removeLast();
-        appendRightBracket();
-        return this;
-    }
-
-    public SqlAssembleBuffer appendForeignKeys(SqlAssembleFactory factory, SqlMapperInfo mapperInfo,
-            ForeignKey[] foreignKeys) throws Exception {
-        if (foreignKeys.length == 0)
-            return this;
-
-        for (ForeignKey foreignKey : foreignKeys)
-            appendForeignKey(factory, mapperInfo, foreignKey).appendComma();
-        removeLast();
-
-        return this;
-    }
-
-    public SqlAssembleBuffer appendIndex(SqlMapperInfo mapperInfo, Index index) {
-        appendIndexType(index.type()).appendSpace().appendIndex().appendSpace();
-        appendNameWrap();
-        append("index_").append(mapperInfo.getName()).append("_");
-        for (String name : index.keys())
-            append(name).append("_");
-        removeLast();
-        appendNameWrap();
-        appendSpace().appendUsing().appendSpace().appendIndexMethod(index.method());
-        if (!index.comment().isEmpty())
-            appendSpace().appendComment().appendSpace().appendString(index.comment());
-        return this;
-    }
-
-    public SqlAssembleBuffer appendUniques(SqlMapperInfo mapperInfo, Unique[] uniques) {
-        if (uniques.length == 0)
-            return this;
-        for (Unique unique : uniques)
-            appendUnique(mapperInfo, unique).appendComma();
-        return this;
-    }
-
-    public SqlAssembleBuffer appendUnique(SqlMapperInfo mapperInfo, Unique unique) {
-        if (unique.value().length == 0)
-            throw new IllegalArgumentException("unique keys cannot be empty");
-
-        appendConstraint().appendSpace();
-
-        appendNameWrap();
-        append("unique_");
-        for (String key : unique.value())
-            append(key).append("_");
-        removeLast();
-        appendNameWrap();
-
-        appendSpace().appendUnique().appendSpace().appendLeftBracket();
-        for (String key : unique.value())
-            appendName(key).appendComma();
-        removeLast();
-        appendRightBracket();
-        return this;
-    }
-
-    public SqlAssembleBuffer appendChecks(SqlMapperInfo mapperInfo, Collection<SqlColumnInfo> columns) {
-        for (SqlColumnInfo column : columns) {
-            Check check = column.getCheck();
-            if (check == null)
-                continue;
-            appendCheck(mapperInfo, column, check).appendComma();
-        }
-        return this;
-    }
-
-    public SqlAssembleBuffer appendCheck(SqlMapperInfo mapperInfo, SqlColumnInfo columnInfo, Check check) {
-        appendConstraint().appendSpace();
-        appendNameWrap();
-        append("check_").append(check.value());
-        appendNameWrap();
-        appendSpace().appendCheck().appendSpace();
-        appendLeftBracket();
-        appendName(columnInfo.getName());
-        switch (check.op()) {
-            case NotNull:
-                appendNot().appendSpace();
-                appendValue(check.value());
-            case IsNull:
-                appendIsNull();
-                appendValue(check.value());
-                break;
-            case Equal:
-                appendEqual();
-                appendValue(check.value());
-                break;
-            case NotEqual:
-                appendNotEqual();
-                appendValue(check.value());
-                break;
-            case Less:
-                appendLess();
-                appendValue(check.value());
-                break;
-            case LessEqual:
-                appendLessEqual();
-                appendValue(check.value());
-                break;
-            case Greater:
-                appendGreater();
-                appendValue(check.value());
-                break;
-            case GreaterEqual:
-                appendGreaterEqual();
-                appendValue(check.value());
-                break;
-            case Like:
-                appendLike(check.value());
-                break;
-            case LeftLike:
-                appendLeftLike(check.value());
-                break;
-            case RightLike:
-                appendRightLike(check.value());
-                break;
-            case Regexp:
-                appendRegexp(check.value());
-                break;
-            default:
-                break;
-        }
-        appendRightBracket();
-        return this;
+    public SqlAssembleBuffer columnSql(String sql, String name) {
+        return bracket(sql).space().as().space().name(name);
     }
 }

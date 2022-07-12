@@ -15,11 +15,11 @@ import com.bknife.orm.mapper.where.Condition;
 
 public class TableMapper<T> implements Mapper<T> {
     private DataSource dataSource;
-    private SqlAssemble<T> assemble;
+    private SqlAssemble assemble;
     private ArrayList<String> primaryKeys;
     private boolean showSql = false;
 
-    public TableMapper(SqlAssemble<T> assemble, DataSource dataSource, boolean showSql) {
+    public TableMapper(SqlAssemble assemble, DataSource dataSource, boolean showSql) {
         this.assemble = assemble;
         this.dataSource = dataSource;
         this.showSql = showSql;

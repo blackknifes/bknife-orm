@@ -1,29 +1,25 @@
 package com.bknife.test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.junit.Test;
 
-import com.bknife.orm.util.FilterVisitor;
-import com.bknife.orm.util.Filter;
+import com.bknife.orm.annotion.Column;
+import com.bknife.orm.annotion.Column.Type;
+import com.bknife.orm.annotion.Table;
+
+import lombok.Data;
 
 public class TestTest {
+
+    @Data
+    @Table(name = "test", comment = "测试注释")
+    private static class TestDbo
+    {
+        @Column(name = "name", type = Type.STRING, length = 128, primaryKey = true, comment = "测试名字")
+        private String name;
+    }
+
     @Test
     public void test() throws Exception {
-        Collection<Integer> vals = new ArrayList<Integer>();
-        for (int i = 0; i < 100; i++)
-            vals.add(i);
-        Iterable<Integer> filter = new Filter<Integer>(vals, new FilterVisitor<Integer>() {
-            @Override
-            public boolean filter(Integer object) {
-                return object.intValue() % 5 == 0;
-            }
-        });
-
-        for (Integer integer : filter) {
-            System.out.println(integer);
-            Thread.sleep(50);
-        }
+        
     }
 }

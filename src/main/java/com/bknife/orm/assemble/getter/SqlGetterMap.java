@@ -2,11 +2,14 @@ package com.bknife.orm.assemble.getter;
 
 import java.util.Map;
 
-import com.bknife.base.ObjectPool;
 import com.bknife.orm.assemble.SqlGetter;
 
-public class SqlGetterMap implements SqlGetter, ObjectPool.LifeSpan {
+public class SqlGetterMap implements SqlGetter {
     private String name;
+
+    public SqlGetterMap(String name) {
+        this.name = name;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -14,15 +17,4 @@ public class SqlGetterMap implements SqlGetter, ObjectPool.LifeSpan {
         Map<String, Object> map = (Map<String, Object>) object;
         return map.get(name);
     }
-
-    @Override
-    public void init(Object... params) throws Exception {
-        name = (String) params[0];
-    }
-
-    @Override
-    public void release() {
-        name = null;
-    }
-
 }

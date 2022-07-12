@@ -1,58 +1,73 @@
 package com.bknife.orm.assemble;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-import com.bknife.orm.annotion.Column;
+import com.bknife.orm.annotion.Check;
 import com.bknife.orm.annotion.ForeignKey;
+import com.bknife.orm.annotion.GroupBy;
 import com.bknife.orm.annotion.Index;
-import com.bknife.orm.annotion.Join;
 import com.bknife.orm.annotion.Table;
 import com.bknife.orm.annotion.Unique;
+import com.bknife.orm.util.ArrayIterable;
 
 /**
  * 表信息
  */
-public class SqlTableInfo implements SqlMapperInfo {
-    private String sqlName;
-    private Class<?> tableClass;
-    private Table annotation;
+public class SqlTableInfo implements SqlMapperInfo, SqlNamed {
+    private final Class<?> tableClass;
+    private final Table tableAnnotation;
+    private final Map<String, SqlColumnInfo> columns;
 
-    private Map<String, SqlColumnInfo> columns = new LinkedHashMap<String, SqlColumnInfo>();
-    private Map<String, SqlColumnInfo> fieldNameColumns = new LinkedHashMap<String, SqlColumnInfo>();
-    private Collection<SqlColumnInfo> primaryKeys = new ArrayList<SqlColumnInfo>();
+    private List<SqlTableColumnInfo> primaryKeys = new ArrayList<SqlTableColumnInfo>();
 
-    public SqlTableInfo(SqlAssembleFactory factory, Class<?> tableClass) throws Exception {
+    public SqlTableInfo(Class<?> tableClass, Table tableAnnotation, Collection<SqlTableColumnInfo.Builder> builders) {
         this.tableClass = tableClass;
-        annotation = tableClass.getAnnotation(Table.class);
-        if (annotation == null)
-            throw new Exception("the class [" + tableClass + "] is not table class");
-        sqlName = "`" + annotation.name() + "`";
-        do {
-            for (Field field : tableClass.getDeclaredFields()) {
-                Column column = field.getAnnotation(Column.class);
-                if (column != null) {
-                    SqlColumnInfo columnInfo = new SqlColumnInfo(factory, this, field, column);
-                    columns.put(column.name(), columnInfo);
-                    fieldNameColumns.put(column.name(), columnInfo);
-                    if (column.primaryKey())
-                        primaryKeys.add(columnInfo);
-                }
-            }
-        } while ((tableClass = tableClass.getSuperclass()) != null);
+        this.tableAnnotation = tableAnnotation;
+        this.columns = new LinkedHashMap<String, SqlColumnInfo>();
+        for (SqlTableColumnInfo.Builder builder : builders) {
+            builder.setTable(this);
+            this.columns.put(builder.getField().getName(), builder.build());
+        }
+
+        for (SqlColumnInfo columnInfo : this.columns.values()) {
+            SqlTableColumnInfo tableColumn = (SqlTableColumnInfo) columnInfo;
+            if (tableColumn.isPrimaryKey())
+                primaryKeys.add(tableColumn);
+        }
     }
 
     @Override
     public String getName() {
-        return annotation.name();
+        return tableAnnotation.name();
     }
 
     @Override
-    public String getSqlName() {
-        return sqlName;
+    public String getTableName() {
+        return tableAnnotation.name();
+    }
+
+    @Override
+    public Class<?> getMapperClass() {
+        return tableClass;
+    }
+
+    @Override
+    public Iterable<SqlColumnInfo> getColumns() {
+        return columns.values();
+    }
+
+    @Override
+    public SqlColumnInfo getColumn(String name) {
+        return columns.get(name);
+    }
+
+    @Override
+    public Iterable<SqlTableColumnInfo> getPrimaryKeys() {
+        return primaryKeys;
     }
 
     /**
@@ -60,8 +75,17 @@ public class SqlTableInfo implements SqlMapperInfo {
      * 
      * @return
      */
-    public ForeignKey[] getForeignKeys() {
-        return tableClass.getDeclaredAnnotationsByType(ForeignKey.class);
+    public Iterable<ForeignKey> getForeignKeys() {
+        return new ArrayIterable<ForeignKey>(tableClass.getDeclaredAnnotationsByType(ForeignKey.class));
+    }
+
+    /**
+     * 获取所有group by
+     * 
+     * @return
+     */
+    public Iterable<GroupBy> getGroupBies() {
+        return new ArrayIterable<GroupBy>(tableClass.getDeclaredAnnotationsByType(GroupBy.class));
     }
 
     /**
@@ -69,119 +93,45 @@ public class SqlTableInfo implements SqlMapperInfo {
      * 
      * @return
      */
-    public Index[] getIndexs() {
-        return tableClass.getDeclaredAnnotationsByType(Index.class);
+    public Iterable<Index> getIndices() {
+        return new ArrayIterable<Index>(tableClass.getDeclaredAnnotationsByType(Index.class));
     }
 
     /**
-     * 获取所有Join
+     * 获取所有唯一约束
      * 
      * @return
      */
-    public Join[] getJoins() {
-        return tableClass.getDeclaredAnnotationsByType(Join.class);
+    public Iterable<Unique> getUniques() {
+        return new ArrayIterable<Unique>(tableClass.getDeclaredAnnotationsByType(Unique.class));
     }
 
     /**
-     * 获取所有Unique
+     * 获取所有check约束
      * 
      * @return
      */
-    public Unique[] getUniques() {
-        return tableClass.getDeclaredAnnotationsByType(Unique.class);
+    public Iterable<Check> getChecks() {
+        return new ArrayIterable<Check>(tableClass.getDeclaredAnnotationsByType(Check.class));
     }
 
-    /**
-     * 获取所有列
-     * 
-     * @return
-     */
-    public Collection<SqlColumnInfo> getColumns() {
-        return columns.values();
-    }
-
-    /**
-     * 获取列
-     * 
-     * @param name 可以是字段名，也可以使列名
-     * @return
-     */
-    public SqlColumnInfo getColumn(String name) {
-        SqlColumnInfo columnInfo = fieldNameColumns.get(name);
-        if (columnInfo != null)
-            return columnInfo;
-        return columns.get(name);
-    }
-
-    /**
-     * 获取主键集合
-     * 
-     * @return
-     */
-    public Collection<SqlColumnInfo> getPrimaryKeys() {
-        return primaryKeys;
-    }
-
-    /**
-     * 获取表类
-     * 
-     * @return
-     */
-    public Class<?> getTableClass() {
-        return tableClass;
-    }
-
-    /**
-     * 获取注解
-     * 
-     * @return
-     */
-    public Table getAnnotation() {
-        return annotation;
-    }
-
-    /**
-     * 表编码，默认utf8mb4
-     * 
-     * @return
-     */
-    public String getCharset() {
-        return annotation.charset();
-    }
-
-    /**
-     * 表排序
-     * 
-     * @return
-     */
-    public String getCollate() {
-        return annotation.collate();
-    }
-
-    /**
-     * 表引擎，默认InnoDB
-     * 
-     * @return
-     */
     public String getEngine() {
-        return annotation.engine();
+        return tableAnnotation.engine();
     }
 
-    /**
-     * 自动增长数值
-     * 
-     * @return
-     */
-    public int getIncrement() {
-        return annotation.increment();
+    public String getCharset() {
+        return tableAnnotation.charset();
     }
 
-    /**
-     * 注释
-     * 
-     * @return
-     */
+    public String getCollate() {
+        return tableAnnotation.collate();
+    }
+
     public String getComment() {
-        return annotation.comment();
+        return tableAnnotation.comment();
+    }
+
+    public int getAutoIncrement() {
+        return tableAnnotation.increment();
     }
 }

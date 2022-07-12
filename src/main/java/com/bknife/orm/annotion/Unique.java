@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * 唯一性约束
  */
 
-@Target(ElementType.FIELD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Uniques.class)
 public @interface Unique {

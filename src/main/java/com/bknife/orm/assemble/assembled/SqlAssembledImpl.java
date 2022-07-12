@@ -3,14 +3,17 @@ package com.bknife.orm.assemble.assembled;
 import java.sql.PreparedStatement;
 import java.util.Collection;
 
-import com.bknife.base.ObjectPool;
-import com.bknife.orm.assemble.SqlAssemblePool;
 import com.bknife.orm.assemble.SqlGetter;
 
-public class SqlAssembledImpl implements SqlAssembled, ObjectPool.LifeSpan {
-    private SqlAssemblePool pool;
+public class SqlAssembledImpl implements SqlAssembled {
+    ;
     private String sql;
     private Collection<SqlGetter> getters;
+
+    public SqlAssembledImpl(String sql, Collection<SqlGetter> getters) {
+        this.sql = sql;
+        this.getters = getters;
+    }
 
     @Override
     public String getSql() {
@@ -22,26 +25,12 @@ public class SqlAssembledImpl implements SqlAssembled, ObjectPool.LifeSpan {
         return getters;
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void init(Object... params) throws Exception {
-        pool = (SqlAssemblePool) params[0];
-        sql = (String) params[1];
-        getters = (Collection<SqlGetter>) params[2];
-    }
-
-    @Override
-    public void release() {
-        for (SqlGetter getter : getters)
-            pool.release(getter);
-        sql = null;
-        getters = null;
-    }
-
     @Override
     public void setParameter(PreparedStatement preparedStatement, Object object) throws Exception {
-        int i = 0;
-        for (SqlGetter getter : getters)
-            preparedStatement.setObject(++i, getter.getValue(object));
+        if (getters != null) {
+            int i = 0;
+            for (SqlGetter getter : getters)
+                preparedStatement.setObject(++i, getter.getValue(object));
+        }
     }
 }

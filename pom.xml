@@ -21,7 +21,7 @@
     </repositories>
 
     <properties>
-        <bknife-base.version>0.0.12</bknife-base.version>
+        <bknife-base.version>0.0.13</bknife-base.version>
     </properties>
 
     <dependencies>

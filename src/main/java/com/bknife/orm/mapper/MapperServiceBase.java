@@ -1,16 +1,15 @@
 package com.bknife.orm.mapper;
 
 import java.util.Collection;
-import java.util.List;
 
 import com.bknife.orm.PageResult;
 import com.bknife.orm.mapper.where.Condition;
 
 public class MapperServiceBase<T> implements MapperService<T> {
 
-    private Mapper<T> mapper;
+    private Updatable<T> mapper;
 
-    public MapperServiceBase(Mapper<T> mapper) {
+    public MapperServiceBase(Updatable<T> mapper) {
         this.mapper = mapper;
     }
 
@@ -35,12 +34,12 @@ public class MapperServiceBase<T> implements MapperService<T> {
     }
 
     @Override
-    public List<T> list() throws Exception {
+    public Collection<T> list() throws Exception {
         return mapper.list();
     }
 
     @Override
-    public List<T> list(Condition condition) throws Exception {
+    public Collection<T> list(Condition condition) throws Exception {
         return mapper.list(condition);
     }
 

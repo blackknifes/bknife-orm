@@ -33,7 +33,7 @@ public class SqlAssembleBuffer {
         if (buffer == null) {
             if (other.buffer != null)
                 return false;
-        } else if (!equals(other.buffer))
+        } else if (!buffer.equals(other.buffer))
             return false;
         return true;
     }

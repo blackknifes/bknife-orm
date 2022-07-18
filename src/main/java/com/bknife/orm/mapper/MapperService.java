@@ -1,7 +1,6 @@
 package com.bknife.orm.mapper;
 
 import java.util.Collection;
-import java.util.List;
 
 import com.bknife.orm.PageResult;
 import com.bknife.orm.mapper.where.Condition;
@@ -49,7 +48,7 @@ public interface MapperService<T> {
      * @return
      * @throws Exception
      */
-    public List<T> list() throws Exception;
+    public Collection<T> list() throws Exception;
 
     /**
      * 获取列表
@@ -58,7 +57,7 @@ public interface MapperService<T> {
      * @return
      * @throws Exception
      */
-    public List<T> list(Condition condition) throws Exception;
+    public Collection<T> list(Condition condition) throws Exception;
 
     /**
      * 分页查询

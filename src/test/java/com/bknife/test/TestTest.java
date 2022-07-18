@@ -1,27 +1,35 @@
 package com.bknife.test;
 
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
-import org.junit.Assert;
+import javax.sql.DataSource;
+
 import org.junit.Test;
 
+import com.bknife.base.json.Jsons;
+import com.bknife.orm.PageResult;
 import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.Column.Type;
+import com.bknife.orm.annotion.ForeignKey;
+import com.bknife.orm.annotion.Join;
 import com.bknife.orm.annotion.Table;
-import com.bknife.orm.assemble.SqlAssemble;
-import com.bknife.orm.assemble.SqlConstants;
-import com.bknife.orm.assemble.SqlContext;
-import com.bknife.orm.assemble.SqlFactoryImpl;
-import com.bknife.orm.assemble.assembled.SqlAssembled;
-import com.bknife.orm.assemble.assembled.SqlAssembledQuery;
-import com.bknife.orm.mapper.Updater;
+import com.bknife.orm.annotion.View;
+import com.bknife.orm.mapper.MapperFactory;
+import com.bknife.orm.mapper.MapperFactoryImpl;
+import com.bknife.orm.mapper.TableMapper;
+import com.bknife.orm.mapper.ViewMapper;
 import com.bknife.orm.mapper.where.Condition;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.Accessors;
@@ -33,14 +41,61 @@ public class TestTest {
     private static final String PASSWORD = "root";
     private static final String DRIVER = "com.mysql.cj.jdbc.Driver";
 
-    private Connection getConnection() throws Exception {
-        Class.forName(DRIVER);
-        return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+    private static class TestDataSource implements DataSource {
+        public TestDataSource() throws ClassNotFoundException {
+            Class.forName(DRIVER);
+        }
+
+        @Override
+        public PrintWriter getLogWriter() throws SQLException {
+            return DriverManager.getLogWriter();
+        }
+
+        @Override
+        public void setLogWriter(PrintWriter out) throws SQLException {
+            DriverManager.setLogWriter(out);
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) throws SQLException {
+            DriverManager.setLoginTimeout(seconds);
+        }
+
+        @Override
+        public int getLoginTimeout() throws SQLException {
+            return DriverManager.getLoginTimeout();
+        }
+
+        @Override
+        public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+            return null;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) throws SQLException {
+            return null;
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) throws SQLException {
+            return false;
+        }
+
+        @Override
+        public Connection getConnection() throws SQLException {
+            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        }
+
+        @Override
+        public Connection getConnection(String username, String password) throws SQLException {
+            return DriverManager.getConnection(URL, username, password);
+        }
     }
 
     @Data
-    @Accessors(chain = true)
-    @ToString()
+    @Accessors(chain = true, fluent = true)
+    @ToString
+    @EqualsAndHashCode
     @NoArgsConstructor
     @AllArgsConstructor
     @Table(name = "test", comment = "测试注释")
@@ -51,88 +106,56 @@ public class TestTest {
         private int age;
     }
 
+    @Data
+    @Accessors(chain = true, fluent = true)
+    @ToString()
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Table(name = "test_ext", comment = "测试注释")
+    @ForeignKey(tableClass = TestDbo.class, sources = "name", targets = "name")
+    private static class TestExtDbo {
+        @Column(name = "name", type = Type.STRING, length = 128, primaryKey = true, comment = "测试名字")
+        private String name;
+        @Column(name = "sex", type = Type.INTEGER, comment = "测试性别")
+        private int sex;
+    }
+
+    @Data
+    @Accessors(chain = true, fluent = true)
+    @ToString(callSuper = true)
+    @EqualsAndHashCode(callSuper = true)
+    @View
+    @Join(tableClass = TestExtDbo.class, sources = "name", targets = "name")
+    private static class TestView extends TestDbo {
+        @Column(tableClass = TestExtDbo.class, name = "sex")
+        private int sex;
+    }
+
     @Test
     public void testTable() throws Exception {
-        java.util.Unsafe;
+        DataSource dataSource = new TestDataSource();
+        MapperFactory factory = new MapperFactoryImpl(true);
+        TableMapper<TestDbo> TestDbo = factory.createTableMapper(TestDbo.class, dataSource);
+        TableMapper<TestExtDbo> TestExtDbo = factory.createTableMapper(TestExtDbo.class, dataSource);
+        ViewMapper<TestView> viewDbo = factory.createViewMapper(TestView.class, dataSource);
 
-        SqlContext context = new SqlContext(new SqlFactoryImpl());
-        SqlAssemble assemble = context.getAssemble(TestDbo.class, SqlConstants.MYSQL);
-
-        Connection connection = getConnection();
-        connection.setAutoCommit(false);
-
-        try {
-            {
-                PreparedStatement ps = connection.prepareStatement(assemble.assembleCreateTable().getSql());
-                System.out.println(ps.toString());
-                ps.execute();
+        {
+            List<TestDbo> dbos = new ArrayList<>();
+            List<TestExtDbo> exts = new ArrayList<>();
+            for (int i = 0; i < 50; i++) {
+                dbos.add(new TestDbo().name("test_" + i).age(i));
+                exts.add(new TestExtDbo().name("test_" + i).sex(i % 2));
             }
-
-            {
-                SqlAssembled assembled = assemble.assembleInsert();
-                PreparedStatement ps = connection.prepareStatement(assembled.getSql());
-                for (int i = 0; i < 50; i++) {
-                    TestDbo dbo = new TestDbo().setName(Integer.toString(i)).setAge(i);
-                    assembled.setParameter(ps, dbo);
-                    System.out.println(ps.toString());
-                    Assert.assertTrue(ps.executeUpdate() > 0);
-                }
-            }
-
-            {
-                SqlAssembled assembled = assemble.assembleReplace();
-                PreparedStatement ps = connection.prepareStatement(assembled.getSql());
-                for (int i = 0; i < 50; i++) {
-                    TestDbo dbo = new TestDbo().setName(Integer.toString(i)).setAge(50 - i);
-                    assembled.setParameter(ps, dbo);
-                    System.out.println(ps.toString());
-                    Assert.assertTrue(ps.executeUpdate() > 0);
-                }
-            }
-
-            {
-                for (int i = 0; i < 50; i++) {
-                    Updater updater = new Updater().addEqual("name", Integer.toString(i)).update("age", i);
-                    SqlAssembled assembled = assemble.assembleUpdate(updater);
-                    PreparedStatement ps = connection.prepareStatement(assembled.getSql());
-                    assembled.setParameter(ps, null);
-                    System.out.println(ps.toString());
-                    Assert.assertTrue(ps.executeUpdate() > 0);
-                }
-            }
-
-            {
-                Condition condition = new Condition().addGreaterEqual("age", 10).addOrderAsc("age");
-                condition.addLike("name", "0");
-                SqlAssembled query = assemble.assembleCount(condition);
-                PreparedStatement ps = connection.prepareStatement(query.getSql());
-                query.setParameter(ps, null);
-                System.out.println(query.toString());
-                ResultSet resultSet = ps.executeQuery();
-                Assert.assertTrue(resultSet.next());
-                System.out.println(resultSet.getInt(1));
-            }
-
-            {
-                Condition condition = new Condition().addGreaterEqual("age", 10).addOrderAsc("age").limit(1, 15);
-                condition.addLike("name", "0");
-                SqlAssembledQuery query = assemble.assembleSelect(condition);
-                PreparedStatement ps = connection.prepareStatement(query.getSql());
-                query.setParameter(ps, null);
-                System.out.println(query.toString());
-                ResultSet resultSet = ps.executeQuery();
-                StringBuffer buffer = new StringBuffer();
-                while (resultSet.next()) {
-                    TestDbo dbo = (TestDbo) query.createFromResultSet(resultSet);
-                    buffer.append(dbo).append("\n");
-                }
-                System.out.println(buffer.toString());
-            }
-
-            connection.prepareStatement("DROP TABLE test;").execute();
-            connection.commit();
-        } catch (Exception e) {
-            connection.rollback();
+            TestDbo.insert(dbos);
+            TestExtDbo.insert(exts);
         }
+        PageResult<TestView> views = viewDbo.page(2, new Condition().addGreaterEqual("age", 10));
+        System.out.println(Jsons.toString(views));
+
+        TestDbo.delete(new Condition().addRightLike("name", "test_"));
+
+        Connection connection = dataSource.getConnection();
+        connection.prepareStatement("DROP TABLE test_ext;").execute();
+        connection.prepareStatement("DROP TABLE test;").execute();
     }
 }

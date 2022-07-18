@@ -8,13 +8,18 @@ import java.util.Map;
 
 import com.bknife.orm.annotion.Join;
 
-public class SqlViewInfo implements SqlMapperInfo {
-    private final SqlTableInfo tableInfo; // 主表信息
-    private final Class<?> viewClass; // 视图类
+public class SqlViewInfo<T> implements SqlMapperInfo<T> {
+    private final SqlTableInfo<?> tableInfo; // 主表信息
+    private final Class<T> viewClass; // 视图类
     private final Map<String, SqlColumnInfo> columnInfos; // 列信息
     private final List<Join> joins = new ArrayList<Join>();
 
-    public SqlViewInfo(SqlTableInfo tableInfo, Class<?> viewClass, Collection<SqlColumnInfo.Builder> builders) {
+    public static <T> SqlViewInfo<T> create(SqlTableInfo<?> tableInfo, Class<T> viewClass,
+            Collection<SqlColumnInfo.Builder> builders) {
+        return new SqlViewInfo<>(tableInfo, viewClass, builders);
+    }
+
+    private SqlViewInfo(SqlTableInfo<?> tableInfo, Class<T> viewClass, Collection<SqlColumnInfo.Builder> builders) {
         this.tableInfo = tableInfo;
         this.viewClass = viewClass;
         this.columnInfos = new LinkedHashMap<String, SqlColumnInfo>();
@@ -22,10 +27,17 @@ public class SqlViewInfo implements SqlMapperInfo {
             SqlColumnInfo info = builder.build();
             this.columnInfos.put(info.getField().getName(), info);
         }
+
+        Class<?> tempClass = viewClass;
+        do {
+            Join[] joins = tempClass.getDeclaredAnnotationsByType(Join.class);
+            for (Join join : joins)
+                this.joins.add(join);
+        } while ((tempClass = tempClass.getSuperclass()) != null);
     }
 
     @Override
-    public Class<?> getMapperClass() {
+    public Class<T> getMapperClass() {
         return viewClass;
     }
 
@@ -48,7 +60,7 @@ public class SqlViewInfo implements SqlMapperInfo {
         return joins;
     }
 
-    public SqlTableInfo getTableInfo() {
+    public SqlTableInfo<?> getTableInfo() {
         return tableInfo;
     }
 

@@ -71,4 +71,9 @@ public class SqlConnection implements AutoCloseable {
     public ResultSet getResultSet() {
         return resultSet;
     }
+
+    public int getTotal() throws SQLException {
+        resultSet.next();
+        return resultSet.getInt(1);
+    }
 }

@@ -10,18 +10,11 @@ import com.bknife.orm.mapper.where.Condition;
  */
 public interface SqlAssemble {
     /**
-     * 获取结果类
-     * 
-     * @return
-     */
-    public Class<?> getResultType();
-
-    /**
      * 组装建表语句
      * 
      * @return
      */
-    public SqlAssembled assembleCreateTable() throws Exception;
+    public <T> SqlAssembled<T> assembleCreateTable(SqlTableInfo<T> tableInfo) throws Exception;
 
     /**
      * 组装count语句
@@ -29,7 +22,7 @@ public interface SqlAssemble {
      * @param condition
      * @return
      */
-    public SqlAssembled assembleCount(Condition condition) throws Exception;
+    public <T> SqlAssembled<T> assembleCount(SqlMapperInfo<T> mapperInfo, Condition condition) throws Exception;
 
     /**
      * 组装select语句
@@ -37,7 +30,7 @@ public interface SqlAssemble {
      * @param condition
      * @return
      */
-    public SqlAssembledQuery assembleSelect(Condition condition) throws Exception;
+    public <T> SqlAssembledQuery<T> assembleSelect(SqlMapperInfo<T> mapperInfo, Condition condition) throws Exception;
 
     /**
      * 组装delete语句
@@ -45,7 +38,7 @@ public interface SqlAssemble {
      * @param condition
      * @return
      */
-    public SqlAssembled assembleDelete(Condition condition) throws Exception;
+    public <T> SqlAssembled<T> assembleDelete(SqlTableInfo<T> tableInfo, Condition condition) throws Exception;
 
     /**
      * 组装update语句
@@ -53,7 +46,7 @@ public interface SqlAssemble {
      * @param updater
      * @return
      */
-    public SqlAssembled assembleUpdate(Updater updater) throws Exception;
+    public <T> SqlAssembled<T> assembleUpdate(SqlTableInfo<T> tableInfo, Updater updater) throws Exception;
 
     /**
      * 组装insert语句
@@ -61,7 +54,7 @@ public interface SqlAssemble {
      * @param object
      * @return
      */
-    public SqlAssembled assembleInsert() throws Exception;
+    public <T> SqlAssembled<T> assembleInsert(SqlTableInfo<T> tableInfo) throws Exception;
 
     /**
      * 组装replace语句
@@ -69,5 +62,5 @@ public interface SqlAssemble {
      * @param object
      * @return
      */
-    public SqlAssembled assembleReplace() throws Exception;
+    public <T> SqlAssembled<T> assembleReplace(SqlTableInfo<T> tableInfo) throws Exception;
 }

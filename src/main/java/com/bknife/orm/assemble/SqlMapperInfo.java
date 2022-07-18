@@ -1,12 +1,12 @@
 package com.bknife.orm.assemble;
 
-public interface SqlMapperInfo {
+public interface SqlMapperInfo<T> {
     /**
      * 获取映射类
      * 
      * @return
      */
-    public Class<?> getMapperClass();
+    public Class<T> getMapperClass();
 
     /**
      * 获取主表名

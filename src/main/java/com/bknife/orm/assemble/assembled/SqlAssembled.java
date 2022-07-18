@@ -1,11 +1,8 @@
 package com.bknife.orm.assemble.assembled;
 
 import java.sql.PreparedStatement;
-import java.util.Collection;
 
-import com.bknife.orm.assemble.SqlGetter;
-
-public interface SqlAssembled {
+public interface SqlAssembled<T> {
     /**
      * 获取sql语句
      * 
@@ -14,16 +11,9 @@ public interface SqlAssembled {
     public String getSql();
 
     /**
-     * 获取参数获取器列表
-     * 
-     * @return
-     */
-    public Collection<SqlGetter> getParameterGetters();
-
-    /**
-     * 设置参数
+     * 从对象属性设置参数
      * 
      * @param preparedStatement
      */
-    public void setParameter(PreparedStatement preparedStatement, Object object) throws Exception;
+    public void setParameter(PreparedStatement preparedStatement, T object) throws Exception;
 }

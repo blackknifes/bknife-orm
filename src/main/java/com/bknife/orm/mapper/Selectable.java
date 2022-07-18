@@ -1,51 +1,11 @@
 package com.bknife.orm.mapper;
 
 import java.util.Collection;
-import java.util.List;
 
 import com.bknife.orm.PageResult;
 import com.bknife.orm.mapper.where.Condition;
 
-public interface Mapper<T> {
-    /**
-     * 是否可查询
-     * 
-     * @return
-     */
-    public boolean isSelectable();
-
-    /**
-     * 是否可创建
-     */
-    public boolean isCreatable();
-
-    /**
-     * 是否可插入或替换
-     * 
-     * @return
-     */
-    public boolean isInsertable();
-
-    /**
-     * 是否可更新
-     * 
-     * @return
-     */
-    public boolean isUpdatable();
-
-    /**
-     * 是否可删除
-     * 
-     * @return
-     */
-    public boolean isDeletable();
-
-    /**
-     * 创建表
-     * 
-     * @throws Exception
-     */
-    public void create() throws Exception;
+public interface Selectable<T> {
 
     /**
      * 获取数据总行数
@@ -89,7 +49,7 @@ public interface Mapper<T> {
      * @return
      * @throws Exception
      */
-    public List<T> list() throws Exception;
+    public Collection<T> list() throws Exception;
 
     /**
      * 获取列表
@@ -98,7 +58,7 @@ public interface Mapper<T> {
      * @return
      * @throws Exception
      */
-    public List<T> list(Condition condition) throws Exception;
+    public Collection<T> list(Condition condition) throws Exception;
 
     /**
      * 分页查询
@@ -139,58 +99,4 @@ public interface Mapper<T> {
      * @throws Exception
      */
     public PageResult<T> page(int current) throws Exception;
-
-    /**
-     * 插入数据
-     * 
-     * @param object
-     * @return
-     * @throws Exception
-     */
-    public void insert(T object) throws Exception;
-
-    /**
-     * 插入数据
-     * 
-     * @param objects
-     * @return
-     * @throws Exception
-     */
-    public void insert(Collection<T> objects) throws Exception;
-
-    /**
-     * 更新数据
-     * 
-     * @param updater
-     * @return
-     * @throws Exception
-     */
-    public void update(Updater updater) throws Exception;
-
-    /**
-     * 删除数据
-     * 
-     * @param condition
-     * @return
-     * @throws Exception
-     */
-    public int delete(Condition condition) throws Exception;
-
-    /**
-     * 替换数据
-     * 
-     * @param object
-     * @return
-     * @throws Exception
-     */
-    public void replace(T object) throws Exception;
-
-    /**
-     * 替换数据
-     * 
-     * @param objects
-     * @return
-     * @throws Exception
-     */
-    public void replace(Collection<T> objects) throws Exception;
 }

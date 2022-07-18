@@ -1,8 +1,8 @@
-package com.bknife.orm.util;
+package com.bknife.orm.assemble;
 
 import java.util.Iterator;
 
-public class ArrayIterable<T> implements Iterable<T> {
+class ArrayIterable<T> implements Iterable<T> {
     private T[] array;
 
     public ArrayIterable(T[] array) {

@@ -54,10 +54,16 @@ public class SqlTableColumnInfo implements SqlColumnInfo {
         this.table = table;
         this.field = field;
         this.columnAnnotation = column;
-        if (!column.defaultValue().isEmpty())
-            defaultValue = ConverterUtils.convert(column.defaultValue(), SqlTypeUtil.getClassType(column.type()));
-        else
-            defaultValue = null;
+        Object val = null;
+        if (!column.defaultValue().isEmpty()) {
+            try {
+                val = ConverterUtils.convert(column.defaultValue(), SqlTypeUtil.getClassType(column.type()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            val = null;
+        }
+        defaultValue = val;
     }
 
     @Override

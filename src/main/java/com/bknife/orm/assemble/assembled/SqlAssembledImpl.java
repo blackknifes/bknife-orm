@@ -1,18 +1,18 @@
 package com.bknife.orm.assemble.assembled;
 
 import java.sql.PreparedStatement;
-import java.util.Collection;
 
 import com.bknife.orm.assemble.SqlGetter;
 
-public class SqlAssembledImpl implements SqlAssembled {
-    ;
+public class SqlAssembledImpl<T> implements SqlAssembled<T> {
     private String sql;
-    private Collection<SqlGetter> getters;
+    private Iterable<SqlGetter> getters;
 
-    public SqlAssembledImpl(String sql, Collection<SqlGetter> getters) {
+    public SqlAssembledImpl(String sql, Iterable<SqlGetter> getters, boolean verbose) {
         this.sql = sql;
         this.getters = getters;
+        if(verbose)
+            System.out.println(sql);
     }
 
     @Override
@@ -21,12 +21,7 @@ public class SqlAssembledImpl implements SqlAssembled {
     }
 
     @Override
-    public Collection<SqlGetter> getParameterGetters() {
-        return getters;
-    }
-
-    @Override
-    public void setParameter(PreparedStatement preparedStatement, Object object) throws Exception {
+    public void setParameter(PreparedStatement preparedStatement, T object) throws Exception {
         if (getters != null) {
             int i = 0;
             for (SqlGetter getter : getters)
@@ -36,6 +31,6 @@ public class SqlAssembledImpl implements SqlAssembled {
 
     @Override
     public String toString() {
-        return "SqlAssembledImpl [sql=" + sql + "]";
+        return sql;
     }
 }

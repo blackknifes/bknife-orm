@@ -12,19 +12,23 @@ import com.bknife.orm.annotion.GroupBy;
 import com.bknife.orm.annotion.Index;
 import com.bknife.orm.annotion.Table;
 import com.bknife.orm.annotion.Unique;
-import com.bknife.orm.util.ArrayIterable;
 
 /**
  * 表信息
  */
-public class SqlTableInfo implements SqlMapperInfo, SqlNamed {
-    private final Class<?> tableClass;
+public class SqlTableInfo<T> implements SqlMapperInfo<T>, SqlNamed {
+    private final Class<T> tableClass;
     private final Table tableAnnotation;
     private final Map<String, SqlColumnInfo> columns;
 
     private List<SqlTableColumnInfo> primaryKeys = new ArrayList<SqlTableColumnInfo>();
 
-    public SqlTableInfo(Class<?> tableClass, Table tableAnnotation, Collection<SqlTableColumnInfo.Builder> builders) {
+    public static <T> SqlTableInfo<T> create(Class<T> tableClass, Table tableAnnotation,
+            Collection<SqlTableColumnInfo.Builder> builders) {
+        return new SqlTableInfo<>(tableClass, tableAnnotation, builders);
+    }
+
+    private SqlTableInfo(Class<T> tableClass, Table tableAnnotation, Collection<SqlTableColumnInfo.Builder> builders) {
         this.tableClass = tableClass;
         this.tableAnnotation = tableAnnotation;
         this.columns = new LinkedHashMap<String, SqlColumnInfo>();
@@ -51,7 +55,7 @@ public class SqlTableInfo implements SqlMapperInfo, SqlNamed {
     }
 
     @Override
-    public Class<?> getMapperClass() {
+    public Class<T> getMapperClass() {
         return tableClass;
     }
 

@@ -2,7 +2,7 @@ package com.bknife.orm.assemble;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 
 import com.bknife.orm.annotion.Column.Type;
@@ -18,7 +18,6 @@ import com.bknife.orm.assemble.exception.NotSupportedException;
 import com.bknife.orm.assemble.getter.SqlGetterField;
 import com.bknife.orm.assemble.getter.SqlGetterValue;
 import com.bknife.orm.assemble.setter.SqlSetterField;
-import com.bknife.orm.assemble.setter.SqlSetterMap;
 import com.bknife.orm.mapper.Updater;
 import com.bknife.orm.mapper.select.SqlLimit;
 import com.bknife.orm.mapper.select.SqlOrderBy;
@@ -30,28 +29,10 @@ import com.bknife.orm.mapper.where.SqlWhereLogic;
 import com.bknife.orm.mapper.where.SqlWhereUnary;
 
 public class SqlAssembleMysql implements SqlAssemble {
-
-    private SqlMapperInfo mapperInfo;
     private SqlContext context;
 
-    private List<SqlSetter> fieldSetters = new ArrayList<SqlSetter>();
-    private List<SqlSetter> mapSetters = new ArrayList<SqlSetter>();
-    private Collection<SqlGetter> insertGetters = new ArrayList<SqlGetter>();
-
-    public SqlAssembleMysql(SqlContext context, Class<?> clazz) throws Exception {
+    public SqlAssembleMysql(SqlContext context) {
         this.context = context;
-        mapperInfo = context.getMapperInfo(clazz);
-        if (mapperInfo == null)
-            throw new Exception("class [" + clazz + "] is not a mapper class");
-        for (SqlColumnInfo columnInfo : mapperInfo.getColumns()) {
-            fieldSetters.add(new SqlSetterField(columnInfo.getField()));
-            mapSetters.add(new SqlSetterMap(columnInfo.getField().getName()));
-        }
-
-        if (mapperInfo instanceof SqlTableInfo) {
-            for (SqlColumnInfo columnInfo : mapperInfo.getColumns())
-                insertGetters.add(new SqlGetterField(columnInfo.getField()));
-        }
     }
 
     private static void appendTypeString(SqlAssembleBuffer buffer, Type type, int length, int dot) {
@@ -123,16 +104,8 @@ public class SqlAssembleMysql implements SqlAssemble {
     }
 
     @Override
-    public Class<?> getResultType() {
-        return mapperInfo.getMapperClass();
-    }
-
-    @Override
-    public SqlAssembled assembleCreateTable() throws Exception {
-        if (!(mapperInfo instanceof SqlTableInfo))
-            throw new NotSupportedException("only table mapper can call create table");
+    public <T> SqlAssembled<T> assembleCreateTable(SqlTableInfo<T> tableInfo) throws Exception {
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
-        SqlTableInfo tableInfo = (SqlTableInfo) mapperInfo;
         buffer.createTableIfNotExist(tableInfo.getName());
         buffer.leftBracket();
 
@@ -193,10 +166,10 @@ public class SqlAssembleMysql implements SqlAssemble {
             buffer.rightBracket().space();
             buffer.references().space();
             if (foreignKey.tableClass() != Object.class) {
-                SqlMapperInfo mapperInfo = context.getMapperInfo(foreignKey.tableClass());
+                SqlMapperInfo<?> mapperInfo = context.getMapperInfo(foreignKey.tableClass());
                 if (mapperInfo == null || !(mapperInfo instanceof SqlTableInfo))
                     throw new NotSupportedException("not supported foreign key table class " + foreignKey.tableClass());
-                buffer.name(((SqlTableInfo) mapperInfo).getName()).space();
+                buffer.name(((SqlTableInfo<?>) mapperInfo).getName()).space();
             } else if (!foreignKey.table().isEmpty())
                 buffer.name(foreignKey.table()).space();
             else
@@ -208,7 +181,7 @@ public class SqlAssembleMysql implements SqlAssemble {
             buffer.rightBracket().space();
             buffer.onDelete().space();
             appendForeignKeyAction(buffer, foreignKey.delete());
-            buffer.onUpdate().space();
+            buffer.space().onUpdate().space();
             appendForeignKeyAction(buffer, foreignKey.update());
             buffer.comma();
         }
@@ -294,55 +267,57 @@ public class SqlAssembleMysql implements SqlAssemble {
             buffer.space().autoIncrement().space().equal().space().append(tableInfo.getAutoIncrement());
         buffer.semicolon();
 
-        return new SqlAssembledImpl(buffer.toString(), null);
+        return new SqlAssembledImpl<T>(buffer.toString(), null, context.isVerbose());
     }
 
     @Override
-    public SqlAssembled assembleCount(Condition condition) throws Exception {
+    public <T> SqlAssembled<T> assembleCount(SqlMapperInfo<T> mapperInfo, Condition condition) throws Exception {
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
         buffer.select().space().count('*').space();
         Collection<SqlGetter> getters = new ArrayList<SqlGetter>();
-        appendFromAfter(buffer, condition, getters);
-        return new SqlAssembledImpl(buffer.toString(), getters);
+        appendFromAfter(mapperInfo, buffer, condition, getters);
+        return new SqlAssembledImpl<T>(buffer.toString(), getters, context.isVerbose());
     }
 
     @Override
-    public SqlAssembledQuery assembleSelect(Condition condition) throws Exception {
+    public <T> SqlAssembledQuery<T> assembleSelect(SqlMapperInfo<T> mapperInfo, Condition condition) throws Exception {
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
         buffer.select().space();
-        for (SqlColumnInfo columnInfo : mapperInfo.getColumns())
+
+        Collection<SqlSetter> setters = new ArrayList<>();
+        for (SqlColumnInfo columnInfo : mapperInfo.getColumns()) {
             buffer.name(columnInfo.getTableName()).dot().name(columnInfo.getName()).comma();
+            setters.add(new SqlSetterField(columnInfo.getField()));
+        }
         buffer.removeLast();
         buffer.space();
         Collection<SqlGetter> getters = new ArrayList<SqlGetter>();
-        appendFromAfter(buffer, condition, getters);
-        return new SqlAssembledQueryImpl(mapperInfo.getMapperClass(), buffer.toString(), getters, fieldSetters);
+        appendFromAfter(mapperInfo, buffer, condition, getters);
+        return new SqlAssembledQueryImpl<T>(mapperInfo.getMapperClass(), buffer.toString(), getters, setters,
+                context.isVerbose());
     }
 
     @Override
-    public SqlAssembled assembleDelete(Condition condition) throws Exception {
-        if (!(mapperInfo instanceof SqlTableInfo))
-            throw new NotSupportedException("view not supported delete");
+    public <T> SqlAssembled<T> assembleDelete(SqlTableInfo<T> tableInfo, Condition condition) throws Exception {
         if (condition == null || !condition.hasWheres())
             throw new NotSupportedException("delete not supported empty condition");
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
-        buffer.deleteFrom().space().name(mapperInfo.getTableName());
+        buffer.deleteFrom().space().name(tableInfo.getTableName());
 
+        buffer.space().where();
         Collection<SqlGetter> getters = new ArrayList<SqlGetter>();
-        appendWheres(buffer, condition.getWheres(), getters);
+        appendWheres(tableInfo, buffer, condition.getWheres(), getters);
         buffer.semicolon();
-        return new SqlAssembledImpl(buffer.toString(), getters);
+        return new SqlAssembledImpl<T>(buffer.toString(), getters, context.isVerbose());
     }
 
     @Override
-    public SqlAssembled assembleUpdate(Updater updater) throws Exception {
-        if (!(mapperInfo instanceof SqlTableInfo))
-            throw new NotSupportedException("view not supported update");
+    public <T> SqlAssembled<T> assembleUpdate(SqlTableInfo<T> tableInfo, Updater updater) throws Exception {
         Condition condition = updater.getCondition();
         if (condition == null || !condition.hasWheres())
             throw new NotSupportedException("update not supported empty condition");
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
-        buffer.update().space().name(mapperInfo.getTableName()).space();
+        buffer.update().space().name(tableInfo.getTableName()).space();
         buffer.set();
 
         Collection<SqlGetter> getters = new ArrayList<SqlGetter>();
@@ -353,71 +328,75 @@ public class SqlAssembleMysql implements SqlAssemble {
         }
         buffer.removeLast();
         buffer.space().where();
-        appendWheres(buffer, condition.getWheres(), getters);
+        appendWheres(tableInfo, buffer, condition.getWheres(), getters);
         buffer.semicolon();
-        return new SqlAssembledImpl(buffer.toString(), getters);
+        return new SqlAssembledImpl<T>(buffer.toString(), getters, context.isVerbose());
     }
 
     @Override
-    public SqlAssembled assembleInsert() throws Exception {
-        if (!(mapperInfo instanceof SqlTableInfo))
-            throw new NotSupportedException("view not supported insert");
+    public <T> SqlAssembled<T> assembleInsert(SqlTableInfo<T> tableInfo) throws Exception {
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
         buffer.insertInto();
-        return assembleInsertOrReplaceAfter(buffer);
+        return assembleInsertOrReplaceAfter(tableInfo, buffer);
     }
 
     @Override
-    public SqlAssembled assembleReplace() throws Exception {
-        if (!(mapperInfo instanceof SqlTableInfo))
-            throw new NotSupportedException("view not supported insert");
+    public <T> SqlAssembled<T> assembleReplace(SqlTableInfo<T> tableInfo) throws Exception {
         SqlAssembleBuffer buffer = new SqlAssembleBuffer();
         buffer.replaceInto();
-        return assembleInsertOrReplaceAfter(buffer);
+        return assembleInsertOrReplaceAfter(tableInfo, buffer);
     }
 
-    private SqlAssembled assembleInsertOrReplaceAfter(SqlAssembleBuffer buffer) {
-        buffer.space().name(mapperInfo.getTableName()).space();
+    private <T> SqlAssembled<T> assembleInsertOrReplaceAfter(SqlTableInfo<T> tableInfo, SqlAssembleBuffer buffer) {
+        buffer.space().name(tableInfo.getTableName()).space();
         buffer.leftBracket();
-        for (SqlColumnInfo columnInfo : mapperInfo.getColumns())
+        Collection<SqlGetter> getters = new ArrayList<>();
+        for (SqlColumnInfo columnInfo : tableInfo.getColumns()) {
             buffer.name(columnInfo.getName()).comma();
+            getters.add(new SqlGetterField(columnInfo.getField()));
+        }
         buffer.removeLast().rightBracket().space();
         buffer.values();
         buffer.leftBracket();
-        for (SqlColumnInfo columnInfo : mapperInfo.getColumns())
+        for (Iterator<SqlColumnInfo> itor = tableInfo.getColumns().iterator(); itor.hasNext(); itor.next())
             buffer.question().comma();
         buffer.removeLast();
         buffer.rightBracket();
         buffer.semicolon();
 
-        return new SqlAssembledImpl(buffer.toString(), insertGetters);
+        return new SqlAssembledImpl<T>(buffer.toString(), getters, context.isVerbose());
     }
 
-    private void appendFromAfter(SqlAssembleBuffer buffer, Condition condition, Collection<SqlGetter> getters)
+    private <T> void appendFromAfter(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Condition condition,
+            Collection<SqlGetter> getters)
             throws Exception {
         buffer.from().space();
         buffer.name(mapperInfo.getTableName());
         if (!(mapperInfo instanceof SqlTableInfo)) {
-            SqlViewInfo viewInfo = (SqlViewInfo) mapperInfo;
-            appendJoins(buffer, viewInfo.getJoins());
+            SqlViewInfo<T> viewInfo = (SqlViewInfo<T>) mapperInfo;
+            appendJoins(mapperInfo, buffer, viewInfo.getJoins());
         }
-        if (condition.hasWheres()) {
-            buffer.space().where();
-            appendWheres(buffer, condition.getWheres(), getters);
+        if (condition != null) {
+            if (condition.hasWheres()) {
+                buffer.space().where();
+                appendWheres(mapperInfo, buffer, condition.getWheres(), getters);
+            }
+            if (condition.hasOrderList())
+                appendOrderByList(mapperInfo, buffer, condition.getOrderList());
+            if (condition.hasLimit())
+                appendLimit(buffer, condition.getLimit());
         }
-        if (condition.hasOrderList())
-            appendOrderByList(buffer, condition.getOrderList());
-        if (condition.hasLimit())
-            appendLimit(buffer, condition.getLimit());
         buffer.semicolon();
     }
 
-    private void appendJoins(SqlAssembleBuffer buffer, Iterable<Join> joins) throws Exception {
+    private <T> void appendJoins(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Iterable<Join> joins)
+            throws Exception {
         for (Join join : joins)
-            appendJoin(buffer, join);
+            appendJoin(mapperInfo, buffer, join);
     }
 
-    private void appendJoin(SqlAssembleBuffer buffer, Join join) throws Exception {
+    private <T> void appendJoin(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Join join) throws Exception {
+        buffer.space();
         String tableName;
         if (join.tableClass() != Object.class)
             tableName = context.getMapperInfo(join.tableClass()).getTableName();
@@ -454,13 +433,15 @@ public class SqlAssembleMysql implements SqlAssemble {
         buffer.removeLast();
     }
 
-    private void appendWheres(SqlAssembleBuffer buffer, Iterable<SqlWhere> wheres, Collection<SqlGetter> getters)
+    private <T> void appendWheres(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Iterable<SqlWhere> wheres,
+            Collection<SqlGetter> getters)
             throws Exception {
         for (SqlWhere where : wheres)
-            appendWhere(buffer, where, getters);
+            appendWhere(mapperInfo, buffer, where, getters);
     }
 
-    private void appendWhere(SqlAssembleBuffer buffer, SqlWhere where, Collection<SqlGetter> getters)
+    private <T> void appendWhere(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, SqlWhere where,
+            Collection<SqlGetter> getters)
             throws Exception {
         buffer.space();
         switch (where.getWhereType()) {
@@ -479,7 +460,7 @@ public class SqlAssembleMysql implements SqlAssemble {
                     default:
                         break;
                 }
-                appendWhere(buffer, logic.getWhere(), getters);
+                appendWhere(mapperInfo, buffer, logic.getWhere(), getters);
                 break;
             }
             case UNARY: {
@@ -554,7 +535,7 @@ public class SqlAssembleMysql implements SqlAssemble {
             case CONDITION: {
                 Condition condition = (Condition) where;
                 buffer.leftBracket();
-                appendWheres(buffer, condition.getWheres(), getters);
+                appendWheres(mapperInfo, buffer, condition.getWheres(), getters);
                 buffer.rightBracket();
                 break;
             }
@@ -563,7 +544,8 @@ public class SqlAssembleMysql implements SqlAssemble {
         }
     }
 
-    private void appendOrderByList(SqlAssembleBuffer buffer, Iterable<SqlOrderBy> orderBies) {
+    private <T> void appendOrderByList(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer,
+            Iterable<SqlOrderBy> orderBies) {
         buffer.space();
         boolean first = true;
         for (SqlOrderBy sqlOrderBy : orderBies) {

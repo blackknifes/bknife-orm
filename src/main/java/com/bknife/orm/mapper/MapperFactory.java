@@ -2,8 +2,12 @@ package com.bknife.orm.mapper;
 
 import javax.sql.DataSource;
 
-public interface MapperFactory {
-    public <T> Mapper<T> createMapperByType(Class<T> clazz, DataSource dataSource) throws Exception;
+import com.bknife.orm.assemble.SqlContext;
 
-    public <T> MapperService<T> createServiceByType(Class<T> clazz, DataSource dataSource) throws Exception;
+public interface MapperFactory {
+    public SqlContext getContext();
+
+    public <T> TableMapper<T> createTableMapper(Class<T> clazz, DataSource dataSource) throws Exception;
+
+    public <T> ViewMapper<T> createViewMapper(Class<T> clazz, DataSource dataSource) throws Exception;
 }

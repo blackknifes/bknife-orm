@@ -10,6 +10,7 @@ import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.Table;
 import com.bknife.orm.assemble.exception.NotSupportedException;
 import com.bknife.orm.assemble.exception.RecurseFoundException;
+import com.bknife.orm.assemble.impl.mysql.SqlAssembleMysqlFactory;
 
 public class SqlContext implements SqlConstants {
     private Map<String, SqlAssembleFactory> assembleFactories = new HashMap<>();

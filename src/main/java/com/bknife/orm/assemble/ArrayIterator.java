@@ -2,6 +2,12 @@ package com.bknife.orm.assemble;
 
 import java.util.Iterator;
 
+/**
+ * 数组迭代器
+ * 
+ * @author bknife
+ * @version 2022-07-20
+ */
 class ArrayIterator<T> implements Iterator<T> {
     private T[] array;
     private int index = 0;

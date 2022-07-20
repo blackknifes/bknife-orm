@@ -1,15 +1,28 @@
-package com.bknife.orm.assemble;
+package com.bknife.orm.assemble.impl.mysql;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.annotion.ForeignKey;
 import com.bknife.orm.annotion.Index;
 import com.bknife.orm.annotion.Join;
 import com.bknife.orm.annotion.Unique;
+import com.bknife.orm.assemble.SqlAssemble;
+import com.bknife.orm.assemble.SqlBuffer;
+import com.bknife.orm.assemble.SqlColumnInfo;
+import com.bknife.orm.assemble.SqlContext;
+import com.bknife.orm.assemble.SqlGetter;
+import com.bknife.orm.assemble.SqlMapperInfo;
+import com.bknife.orm.assemble.SqlSetter;
+import com.bknife.orm.assemble.SqlTableColumnInfo;
+import com.bknife.orm.assemble.SqlTableInfo;
+import com.bknife.orm.assemble.SqlViewInfo;
 import com.bknife.orm.assemble.assembled.SqlAssembled;
 import com.bknife.orm.assemble.assembled.SqlAssembledImpl;
 import com.bknife.orm.assemble.assembled.SqlAssembledQuery;
@@ -29,13 +42,45 @@ import com.bknife.orm.mapper.where.SqlWhereLogic;
 import com.bknife.orm.mapper.where.SqlWhereUnary;
 
 public class SqlAssembleMysql implements SqlAssemble {
+    private static final Map<Class<?>, Column.Type> typeMap = new HashMap<>();
     private SqlContext context;
+
+    static {
+        typeMap.put(boolean.class, Type.BYTE);
+        typeMap.put(Boolean.class, Type.BYTE);
+        typeMap.put(byte.class, Type.BYTE);
+        typeMap.put(Byte.class, Type.BYTE);
+        typeMap.put(short.class, Type.INTEGER);
+        typeMap.put(Short.class, Type.INTEGER);
+        typeMap.put(int.class, Type.INTEGER);
+        typeMap.put(Integer.class, Type.INTEGER);
+        typeMap.put(long.class, Type.LONG);
+        typeMap.put(Long.class, Type.LONG);
+        typeMap.put(float.class, Type.DOUBLE);
+        typeMap.put(Float.class, Type.DOUBLE);
+        typeMap.put(double.class, Type.DOUBLE);
+        typeMap.put(Double.class, Type.DOUBLE);
+        typeMap.put(String.class, Type.STRING);
+        typeMap.put(BigDecimal.class, Type.DECIMAL);
+        typeMap.put(java.util.Date.class, Type.DATE);
+        typeMap.put(java.sql.Date.class, Type.DATE);
+        typeMap.put(java.sql.Time.class, Type.TIME);
+        typeMap.put(java.sql.Timestamp.class, Type.TIMESTAMP);
+        typeMap.put(byte[].class, Type.BINARY);
+    }
+
+    public static Column.Type getClassMapType(Class<?> clazz) throws NotSupportedException {
+        Column.Type type = typeMap.get(clazz);
+        if (type == null)
+            throw new NotSupportedException("cannot supported value auto type: " + clazz);
+        return type;
+    }
 
     public SqlAssembleMysql(SqlContext context) {
         this.context = context;
     }
 
-    private static void appendTypeString(SqlAssembleBuffer buffer, Type type, int length, int dot) {
+    private static void appendTypeString(SqlBuffer buffer, Type type, int length, int dot) {
         switch (type) {
             case BYTE:
                 buffer.append("TINYINT");
@@ -51,17 +96,17 @@ public class SqlAssembleMysql implements SqlAssemble {
             case STRING:
                 if (length == 0)
                     throw new IllegalArgumentException("varchar length is illegal: " + length);
-                buffer.append("VARCHAR").bracket(length);
+                buffer.append("VARCHAR").parentheses(length);
                 return;
             case CHARS:
                 if (length == 0)
                     throw new IllegalArgumentException("char length is illegal: " + length);
-                buffer.append("CHAR").bracket(length);
+                buffer.append("CHAR").parentheses(length);
                 return;
             case DECIMAL:
                 if (length == 0)
                     throw new IllegalArgumentException("decimal length is illegal: " + length);
-                buffer.append("DECIMAL").leftBracket().append(length).comma().append(dot).rightBracket();
+                buffer.append("DECIMAL").openParentheses().append(length).comma().append(dot).closeParentheses();
                 return;
             case DATE:
                 buffer.append("DATE");
@@ -75,7 +120,7 @@ public class SqlAssembleMysql implements SqlAssemble {
             case BINARY:
                 if (length == 0)
                     throw new IllegalArgumentException("varchar length is illegal: " + length);
-                buffer.append("VARBINARY").bracket(length);
+                buffer.append("VARBINARY").parentheses(length);
                 return;
             default:
                 break;
@@ -83,7 +128,7 @@ public class SqlAssembleMysql implements SqlAssemble {
         throw new IllegalArgumentException("type is illegal: " + type);
     }
 
-    private static void appendForeignKeyAction(SqlAssembleBuffer buffer, ForeignKey.ForeignKeyAction action)
+    private static void appendForeignKeyAction(SqlBuffer buffer, ForeignKey.ForeignKeyAction action)
             throws Exception {
         switch (action) {
             case CASCADE:
@@ -105,18 +150,30 @@ public class SqlAssembleMysql implements SqlAssemble {
 
     @Override
     public <T> SqlAssembled<T> assembleCreateTable(SqlTableInfo<T> tableInfo) throws Exception {
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.createTableIfNotExist(tableInfo.getName());
-        buffer.leftBracket();
+        buffer.openParentheses();
 
         for (SqlColumnInfo columnInfo : tableInfo.getColumns()) {
             SqlTableColumnInfo tableColumn = (SqlTableColumnInfo) columnInfo;
+            Column.Type type = tableColumn.getType();
+            int length = tableColumn.getLength();
+            if (type == Type.AUTO)
+                type = getClassMapType(tableColumn.getField().getType());
             // 列名
             buffer.name(tableColumn.getName()).space();
+
+            if (length == 0) {
+                if (type == Type.STRING)
+                    length = 32;
+                else if (type == Type.BINARY)
+                    length = 4096;
+            }
+
             // 类型
-            appendTypeString(buffer, tableColumn.getType(), tableColumn.getLength(), tableColumn.getDot());
+            appendTypeString(buffer, type, length, tableColumn.getDot());
             buffer.space();
-            if (tableColumn.getType() == Type.STRING) {
+            if (type == Type.STRING) {
                 // string类型的字符集与排序规则设置
                 if (!tableColumn.getCharset().isEmpty())
                     buffer.charset().space().append(tableColumn.getCharset()).space();
@@ -138,11 +195,11 @@ public class SqlAssembleMysql implements SqlAssemble {
         }
 
         // 主键
-        buffer.primaryKey().space().leftBracket();
+        buffer.primaryKey().space().openParentheses();
         for (SqlTableColumnInfo primaryKey : tableInfo.getPrimaryKeys())
             buffer.name(primaryKey.getName()).comma();
         buffer.removeLast();
-        buffer.rightBracket().comma();
+        buffer.closeParentheses().comma();
 
         // 外键
         for (ForeignKey foreignKey : tableInfo.getForeignKeys()) {
@@ -159,11 +216,11 @@ public class SqlAssembleMysql implements SqlAssemble {
                 buffer.append(target).append("_");
             buffer.removeLast();
             buffer.nameWrap();
-            buffer.space().foreignKey().space().leftBracket();
+            buffer.space().foreignKey().space().openParentheses();
             for (String source : foreignKey.sources())
                 buffer.name(source).comma();
             buffer.removeLast();
-            buffer.rightBracket().space();
+            buffer.closeParentheses().space();
             buffer.references().space();
             if (foreignKey.tableClass() != Object.class) {
                 SqlMapperInfo<?> mapperInfo = context.getMapperInfo(foreignKey.tableClass());
@@ -174,11 +231,11 @@ public class SqlAssembleMysql implements SqlAssemble {
                 buffer.name(foreignKey.table()).space();
             else
                 throw new Exception("foreign key table is not set");
-            buffer.space().leftBracket();
+            buffer.space().openParentheses();
             for (String target : foreignKey.targets())
                 buffer.name(target).comma();
             buffer.removeLast();
-            buffer.rightBracket().space();
+            buffer.closeParentheses().space();
             buffer.onDelete().space();
             appendForeignKeyAction(buffer, foreignKey.delete());
             buffer.space().onUpdate().space();
@@ -212,11 +269,11 @@ public class SqlAssembleMysql implements SqlAssemble {
                 buffer.append(key).append("_");
             buffer.removeLast();
             buffer.nameWrap();
-            buffer.space().leftBracket();
+            buffer.space().openParentheses();
             for (String key : index.keys())
                 buffer.name(key).comma();
             buffer.removeLast();
-            buffer.rightBracket().space();
+            buffer.closeParentheses().space();
             buffer.using().space();
             switch (index.method()) {
                 case BTREE:
@@ -245,14 +302,14 @@ public class SqlAssembleMysql implements SqlAssemble {
                 buffer.append(key).append("_");
             buffer.removeLast();
             buffer.nameWrap().space();
-            buffer.unique().space().leftBracket();
+            buffer.unique().space().openParentheses();
             for (String key : unique.value())
                 buffer.name(key).comma();
             buffer.removeLast();
-            buffer.rightBracket().comma();
+            buffer.closeParentheses().comma();
         }
         buffer.removeLast();
-        buffer.rightBracket();
+        buffer.closeParentheses();
 
         if (!tableInfo.getEngine().isEmpty())
             buffer.space().engine().space().equal().space().append(tableInfo.getEngine());
@@ -272,7 +329,7 @@ public class SqlAssembleMysql implements SqlAssemble {
 
     @Override
     public <T> SqlAssembled<T> assembleCount(SqlMapperInfo<T> mapperInfo, Condition condition) throws Exception {
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.select().space().count('*').space();
         Collection<SqlGetter> getters = new ArrayList<SqlGetter>();
         appendFromAfter(mapperInfo, buffer, condition, getters);
@@ -281,7 +338,7 @@ public class SqlAssembleMysql implements SqlAssemble {
 
     @Override
     public <T> SqlAssembledQuery<T> assembleSelect(SqlMapperInfo<T> mapperInfo, Condition condition) throws Exception {
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.select().space();
 
         Collection<SqlSetter> setters = new ArrayList<>();
@@ -301,7 +358,7 @@ public class SqlAssembleMysql implements SqlAssemble {
     public <T> SqlAssembled<T> assembleDelete(SqlTableInfo<T> tableInfo, Condition condition) throws Exception {
         if (condition == null || !condition.hasWheres())
             throw new NotSupportedException("delete not supported empty condition");
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.deleteFrom().space().name(tableInfo.getTableName());
 
         buffer.space().where();
@@ -316,7 +373,7 @@ public class SqlAssembleMysql implements SqlAssemble {
         Condition condition = updater.getCondition();
         if (condition == null || !condition.hasWheres())
             throw new NotSupportedException("update not supported empty condition");
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.update().space().name(tableInfo.getTableName()).space();
         buffer.set();
 
@@ -335,39 +392,39 @@ public class SqlAssembleMysql implements SqlAssemble {
 
     @Override
     public <T> SqlAssembled<T> assembleInsert(SqlTableInfo<T> tableInfo) throws Exception {
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.insertInto();
         return assembleInsertOrReplaceAfter(tableInfo, buffer);
     }
 
     @Override
     public <T> SqlAssembled<T> assembleReplace(SqlTableInfo<T> tableInfo) throws Exception {
-        SqlAssembleBuffer buffer = new SqlAssembleBuffer();
+        SqlBuffer buffer = new SqlBuffer();
         buffer.replaceInto();
         return assembleInsertOrReplaceAfter(tableInfo, buffer);
     }
 
-    private <T> SqlAssembled<T> assembleInsertOrReplaceAfter(SqlTableInfo<T> tableInfo, SqlAssembleBuffer buffer) {
+    private <T> SqlAssembled<T> assembleInsertOrReplaceAfter(SqlTableInfo<T> tableInfo, SqlBuffer buffer) {
         buffer.space().name(tableInfo.getTableName()).space();
-        buffer.leftBracket();
+        buffer.openParentheses();
         Collection<SqlGetter> getters = new ArrayList<>();
         for (SqlColumnInfo columnInfo : tableInfo.getColumns()) {
             buffer.name(columnInfo.getName()).comma();
             getters.add(new SqlGetterField(columnInfo.getField()));
         }
-        buffer.removeLast().rightBracket().space();
+        buffer.removeLast().closeParentheses().space();
         buffer.values();
-        buffer.leftBracket();
+        buffer.openParentheses();
         for (Iterator<SqlColumnInfo> itor = tableInfo.getColumns().iterator(); itor.hasNext(); itor.next())
             buffer.question().comma();
         buffer.removeLast();
-        buffer.rightBracket();
+        buffer.closeParentheses();
         buffer.semicolon();
 
         return new SqlAssembledImpl<T>(buffer.toString(), getters, context.isVerbose());
     }
 
-    private <T> void appendFromAfter(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Condition condition,
+    private <T> void appendFromAfter(SqlMapperInfo<T> mapperInfo, SqlBuffer buffer, Condition condition,
             Collection<SqlGetter> getters)
             throws Exception {
         buffer.from().space();
@@ -389,13 +446,13 @@ public class SqlAssembleMysql implements SqlAssemble {
         buffer.semicolon();
     }
 
-    private <T> void appendJoins(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Iterable<Join> joins)
+    private <T> void appendJoins(SqlMapperInfo<T> mapperInfo, SqlBuffer buffer, Iterable<Join> joins)
             throws Exception {
         for (Join join : joins)
             appendJoin(mapperInfo, buffer, join);
     }
 
-    private <T> void appendJoin(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Join join) throws Exception {
+    private <T> void appendJoin(SqlMapperInfo<T> mapperInfo, SqlBuffer buffer, Join join) throws Exception {
         buffer.space();
         String tableName;
         if (join.tableClass() != Object.class)
@@ -433,14 +490,14 @@ public class SqlAssembleMysql implements SqlAssemble {
         buffer.removeLast();
     }
 
-    private <T> void appendWheres(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, Iterable<SqlWhere> wheres,
+    private <T> void appendWheres(SqlMapperInfo<T> mapperInfo, SqlBuffer buffer, Iterable<SqlWhere> wheres,
             Collection<SqlGetter> getters)
             throws Exception {
         for (SqlWhere where : wheres)
             appendWhere(mapperInfo, buffer, where, getters);
     }
 
-    private <T> void appendWhere(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer, SqlWhere where,
+    private <T> void appendWhere(SqlMapperInfo<T> mapperInfo, SqlBuffer buffer, SqlWhere where,
             Collection<SqlGetter> getters)
             throws Exception {
         buffer.space();
@@ -468,8 +525,8 @@ public class SqlAssembleMysql implements SqlAssemble {
                 switch (unary.getUnaryType()) {
                     case IS_NULL:
                         SqlColumnInfo columnInfo = mapperInfo.getColumn(unary.getColumn());
-                        buffer.isNull().leftBracket().name(columnInfo.getTableName()).dot().name(columnInfo.getName())
-                                .rightBracket();
+                        buffer.isNull().openParentheses().name(columnInfo.getTableName()).dot().name(columnInfo.getName())
+                                .closeParentheses();
                         break;
                     default:
                         break;
@@ -523,20 +580,20 @@ public class SqlAssembleMysql implements SqlAssemble {
                 SqlColumnInfo columnInfo = mapperInfo.getColumn(binary.getColumn());
                 buffer.name(columnInfo.getTableName()).dot().name(columnInfo.getName()).space().in().space();
                 SqlWhereIn in = (SqlWhereIn) where;
-                buffer.leftBracket();
+                buffer.openParentheses();
                 for (Object value : in.getValues()) {
                     buffer.question().comma();
                     getters.add(new SqlGetterValue(value));
                 }
                 buffer.removeLast();
-                buffer.rightBracket();
+                buffer.closeParentheses();
                 break;
             }
             case CONDITION: {
                 Condition condition = (Condition) where;
-                buffer.leftBracket();
+                buffer.openParentheses();
                 appendWheres(mapperInfo, buffer, condition.getWheres(), getters);
-                buffer.rightBracket();
+                buffer.closeParentheses();
                 break;
             }
             default:
@@ -544,7 +601,7 @@ public class SqlAssembleMysql implements SqlAssemble {
         }
     }
 
-    private <T> void appendOrderByList(SqlMapperInfo<T> mapperInfo, SqlAssembleBuffer buffer,
+    private <T> void appendOrderByList(SqlMapperInfo<T> mapperInfo, SqlBuffer buffer,
             Iterable<SqlOrderBy> orderBies) {
         buffer.space();
         boolean first = true;
@@ -565,7 +622,7 @@ public class SqlAssembleMysql implements SqlAssemble {
         buffer.removeLast();
     }
 
-    private void appendLimit(SqlAssembleBuffer buffer, SqlLimit limit) {
+    private void appendLimit(SqlBuffer buffer, SqlLimit limit) {
         buffer.space().append("LIMIT ").append(limit.getOffset()).comma().append(limit.getTotal());
     }
 }

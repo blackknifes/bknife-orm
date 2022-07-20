@@ -7,6 +7,9 @@ import com.bknife.orm.mapper.where.Condition;
 
 /**
  * sql组装器
+ * 
+ * @author bknife
+ * @version 2022-07-20
  */
 public interface SqlAssemble {
     /**

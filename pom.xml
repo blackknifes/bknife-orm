@@ -25,6 +25,13 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.12.12</version>
+        </dependency>
+
         <dependency>
             <groupId>com.github.blackknifes</groupId>
             <artifactId>bknife-base</artifactId>
@@ -42,5 +49,7 @@
             <artifactId>spring-jdbc</artifactId>
             <version>${spring-jdbc.version}</version>
         </dependency>
+
+        
     </dependencies>
 </project>

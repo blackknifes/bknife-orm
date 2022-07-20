@@ -15,17 +15,7 @@ public class SqlConnection implements AutoCloseable {
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
 
-    @Override
-    public void close() throws Exception {
-        if (resultSet != null)
-            resultSet.close();
-        if (preparedStatement != null)
-            preparedStatement.close();
-        if (connection != null && !DataSourceUtils.isConnectionTransactional(connection, dataSource))
-            DataSourceUtils.releaseConnection(connection, dataSource);
-    }
-
-    public static SqlConnection Create(DataSource dataSource, String sql) throws Exception {
+    public static SqlConnection create(DataSource dataSource, String sql) throws Exception {
         SqlConnection conn = new SqlConnection(dataSource);
         try {
             conn.preparedStatement(sql);
@@ -35,6 +25,16 @@ public class SqlConnection implements AutoCloseable {
             throw e;
         }
         return conn;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (resultSet != null)
+            resultSet.close();
+        if (preparedStatement != null)
+            preparedStatement.close();
+        if (connection != null && !DataSourceUtils.isConnectionTransactional(connection, dataSource))
+            DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     private SqlConnection(DataSource dataSource) {

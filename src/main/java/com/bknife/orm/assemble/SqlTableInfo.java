@@ -21,6 +21,8 @@ public class SqlTableInfo<T> implements SqlMapperInfo<T>, SqlNamed {
     private final Table tableAnnotation;
     private final Map<String, SqlColumnInfo> columns;
 
+    private final String name;
+
     private List<SqlTableColumnInfo> primaryKeys = new ArrayList<SqlTableColumnInfo>();
 
     public static <T> SqlTableInfo<T> create(Class<T> tableClass, Table tableAnnotation,
@@ -42,16 +44,21 @@ public class SqlTableInfo<T> implements SqlMapperInfo<T>, SqlNamed {
             if (tableColumn.isPrimaryKey())
                 primaryKeys.add(tableColumn);
         }
+
+        if (!tableAnnotation.name().isEmpty())
+            name = tableAnnotation.name();
+        else
+            name = SqlNameUtils.classToTableName(tableClass.getSimpleName());
     }
 
     @Override
     public String getName() {
-        return tableAnnotation.name();
+        return name;
     }
 
     @Override
     public String getTableName() {
-        return tableAnnotation.name();
+        return name;
     }
 
     @Override

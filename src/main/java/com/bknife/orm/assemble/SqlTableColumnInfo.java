@@ -11,6 +11,7 @@ public class SqlTableColumnInfo implements SqlColumnInfo {
     private final Field field;
     private final Column columnAnnotation;
     private final Object defaultValue;
+    private final String name; // 列名
 
     public static class Builder implements SqlColumnInfo.Builder {
         private SqlNamed table;
@@ -63,12 +64,17 @@ public class SqlTableColumnInfo implements SqlColumnInfo {
             }
             val = null;
         }
+
+        if (!column.name().isEmpty())
+            name = column.name();
+        else
+            name = SqlNameUtils.fieldToColumnName(field.getName());
         defaultValue = val;
     }
 
     @Override
     public String getName() {
-        return columnAnnotation.name();
+        return name;
     }
 
     @Override

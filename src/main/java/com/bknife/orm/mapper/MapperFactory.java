@@ -7,7 +7,7 @@ import com.bknife.orm.assemble.SqlContext;
 public interface MapperFactory {
     public SqlContext getContext();
 
-    public <T> TableMapper<T> createTableMapper(Class<T> clazz, DataSource dataSource) throws Exception;
+    public <T> TableMapperProxy<T> createTableMapper(Class<T> clazz, DataSource dataSource) throws Exception;
 
     public <T> ViewMapper<T> createViewMapper(Class<T> clazz, DataSource dataSource) throws Exception;
 }

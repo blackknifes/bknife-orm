@@ -116,6 +116,6 @@ public class ViewMapper<T> implements Selectable<T> {
     }
 
     private SqlConnection preparedStatement(SqlAssembled<T> assembled) throws Exception {
-        return SqlConnection.Create(dataSource, assembled.getSql());
+        return SqlConnection.create(dataSource, assembled.getSql());
     }
 }

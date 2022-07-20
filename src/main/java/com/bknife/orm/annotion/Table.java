@@ -16,7 +16,7 @@ public @interface Table {
      * 
      * @return
      */
-    public String name();
+    public String name() default "";
 
     /**
      * 表编码，默认utf8mb4

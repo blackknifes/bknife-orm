@@ -5,9 +5,6 @@ import java.lang.reflect.Field;
 import com.bknife.orm.annotion.Column;
 
 public class SqlViewColumnInfo implements SqlColumnInfo {
-    private final SqlNamed table;
-    private final Field field;
-    private final Column columnAnnotation;
 
     public static class Builder implements SqlColumnInfo.Builder {
         private SqlNamed table;
@@ -45,18 +42,26 @@ public class SqlViewColumnInfo implements SqlColumnInfo {
             this.column = column;
             return this;
         }
-
     }
+
+    private final SqlNamed table;
+    private final Field field;
+    private final Column columnAnnotation;
+    private final String name;
 
     public SqlViewColumnInfo(SqlNamed table, Field field, Column column) {
         this.table = table;
         this.field = field;
         this.columnAnnotation = column;
+        if (!column.name().isEmpty())
+            name = column.name();
+        else
+            name = SqlNameUtils.fieldToColumnName(field.getName());
     }
 
     @Override
     public String getName() {
-        return columnAnnotation.name();
+        return name;
     }
 
     @Override

@@ -29,7 +29,7 @@ public @interface Column {
     /**
      * 字段名
      */
-    public String name();
+    public String name() default "";
 
     /**
      * 类型
@@ -48,15 +48,11 @@ public @interface Column {
 
     /**
      * 是否为无符号
-     * 
-     * @return
      */
     public boolean unsigned() default false;
 
     /**
      * 唯一性
-     * 
-     * @return
      */
     public boolean unique() default false;
 

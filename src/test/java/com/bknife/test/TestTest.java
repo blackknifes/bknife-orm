@@ -23,7 +23,7 @@ import com.bknife.orm.annotion.Table;
 import com.bknife.orm.annotion.View;
 import com.bknife.orm.mapper.MapperFactory;
 import com.bknife.orm.mapper.MapperFactoryImpl;
-import com.bknife.orm.mapper.TableMapper;
+import com.bknife.orm.mapper.TableMapperProxy;
 import com.bknife.orm.mapper.ViewMapper;
 import com.bknife.orm.mapper.where.Condition;
 
@@ -135,8 +135,8 @@ public class TestTest {
     public void testTable() throws Exception {
         DataSource dataSource = new TestDataSource();
         MapperFactory factory = new MapperFactoryImpl(true);
-        TableMapper<TestDbo> TestDbo = factory.createTableMapper(TestDbo.class, dataSource);
-        TableMapper<TestExtDbo> TestExtDbo = factory.createTableMapper(TestExtDbo.class, dataSource);
+        TableMapperProxy<TestDbo> TestDbo = factory.createTableMapper(TestDbo.class, dataSource);
+        TableMapperProxy<TestExtDbo> TestExtDbo = factory.createTableMapper(TestExtDbo.class, dataSource);
         ViewMapper<TestView> viewDbo = factory.createViewMapper(TestView.class, dataSource);
 
         {

@@ -2,7 +2,6 @@ package com.bknife.orm.assemble;
 
 import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.assemble.exception.NotSupportedException;
-import com.bknife.orm.assemble.exception.SqlIllegalNameException;
 
 /**
  * sql配置
@@ -27,42 +26,6 @@ public interface SqlConfig {
      * @throws NotSupportedException
      */
     public Type getColumnType(Class<?> clazz) throws NotSupportedException;
-
-    /**
-     * 获取从类名解析的表名
-     * 
-     * @param className
-     * @throws SqlIllegalNameException
-     * @return
-     */
-    public String getTableName(String className) throws SqlIllegalNameException;
-
-    /**
-     * 获取从表名解析的类名
-     * 
-     * @param tableName
-     * @throws SqlIllegalNameException
-     * @return
-     */
-    public String getClassName(String tableName) throws SqlIllegalNameException;
-
-    /**
-     * 获取从字段名解析的列名
-     * 
-     * @param fieldName
-     * @throws SqlIllegalNameException
-     * @return
-     */
-    public String getColumnName(String fieldName) throws SqlIllegalNameException;
-
-    /**
-     * 获取从列名解析的字段名
-     * 
-     * @param columnName
-     * @throws SqlIllegalNameException
-     * @return
-     */
-    public String getFieldName(String columnName) throws SqlIllegalNameException;
 
     /**
      * 获取表默认字符集

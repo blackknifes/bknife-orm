@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  */
 @Target({ ElementType.FIELD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Update {
+public @interface UpdateField {
     /**
      * 该字段是否参与update
      * 

@@ -4,11 +4,10 @@ import com.bknife.orm.assemble.SqlAssemble;
 import com.bknife.orm.assemble.SqlAssembleFactory;
 import com.bknife.orm.assemble.SqlContext;
 
-public class SqlAssembleMysqlFactory implements SqlAssembleFactory {
+public class SqlAssembleFactoryMysql implements SqlAssembleFactory {
 
     @Override
     public SqlAssemble getAssemble(SqlContext context) throws Exception {
         return new SqlAssembleMysql(context);
     }
-
 }

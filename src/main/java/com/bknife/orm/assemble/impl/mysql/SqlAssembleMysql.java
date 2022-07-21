@@ -1,9 +1,7 @@
 package com.bknife.orm.assemble.impl.mysql;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -16,6 +14,7 @@ import com.bknife.orm.annotion.Unique;
 import com.bknife.orm.assemble.SqlAssemble;
 import com.bknife.orm.assemble.SqlBuffer;
 import com.bknife.orm.assemble.SqlColumnInfo;
+import com.bknife.orm.assemble.SqlConfig;
 import com.bknife.orm.assemble.SqlContext;
 import com.bknife.orm.assemble.SqlGetter;
 import com.bknife.orm.assemble.SqlMapperInfo;
@@ -42,90 +41,32 @@ import com.bknife.orm.mapper.where.SqlWhereLogic;
 import com.bknife.orm.mapper.where.SqlWhereUnary;
 
 public class SqlAssembleMysql implements SqlAssemble {
-    private static final Map<Class<?>, Column.Type> typeMap = new HashMap<>();
+    private SqlConfig config = new SqlConfigMysql();
     private SqlContext context;
-
-    static {
-        typeMap.put(boolean.class, Type.BYTE);
-        typeMap.put(Boolean.class, Type.BYTE);
-        typeMap.put(byte.class, Type.BYTE);
-        typeMap.put(Byte.class, Type.BYTE);
-        typeMap.put(short.class, Type.INTEGER);
-        typeMap.put(Short.class, Type.INTEGER);
-        typeMap.put(int.class, Type.INTEGER);
-        typeMap.put(Integer.class, Type.INTEGER);
-        typeMap.put(long.class, Type.LONG);
-        typeMap.put(Long.class, Type.LONG);
-        typeMap.put(float.class, Type.DOUBLE);
-        typeMap.put(Float.class, Type.DOUBLE);
-        typeMap.put(double.class, Type.DOUBLE);
-        typeMap.put(Double.class, Type.DOUBLE);
-        typeMap.put(String.class, Type.STRING);
-        typeMap.put(BigDecimal.class, Type.DECIMAL);
-        typeMap.put(java.util.Date.class, Type.DATE);
-        typeMap.put(java.sql.Date.class, Type.DATE);
-        typeMap.put(java.sql.Time.class, Type.TIME);
-        typeMap.put(java.sql.Timestamp.class, Type.TIMESTAMP);
-        typeMap.put(byte[].class, Type.BINARY);
-    }
-
-    public static Column.Type getClassMapType(Class<?> clazz) throws NotSupportedException {
-        Column.Type type = typeMap.get(clazz);
-        if (type == null)
-            throw new NotSupportedException("cannot supported value auto type: " + clazz);
-        return type;
-    }
 
     public SqlAssembleMysql(SqlContext context) {
         this.context = context;
     }
 
-    private static void appendTypeString(SqlBuffer buffer, Type type, int length, int dot) {
+    private void appendTypeString(SqlBuffer buffer, Type type, int length, int dot) throws NotSupportedException {
+        buffer.append(config.getSqlType(type));
+
         switch (type) {
-            case BYTE:
-                buffer.append("TINYINT");
-                return;
-            case INTEGER:
-                buffer.append("INT");
-                return;
-            case LONG:
-                buffer.append("BIGINT");
-                return;
-            case DOUBLE:
-                buffer.append("DOUBLE");
             case STRING:
-                if (length == 0)
-                    throw new IllegalArgumentException("varchar length is illegal: " + length);
-                buffer.append("VARCHAR").parentheses(length);
+                buffer.parentheses(length);
                 return;
             case CHARS:
-                if (length == 0)
-                    throw new IllegalArgumentException("char length is illegal: " + length);
-                buffer.append("CHAR").parentheses(length);
+                buffer.parentheses(length);
                 return;
             case DECIMAL:
-                if (length == 0)
-                    throw new IllegalArgumentException("decimal length is illegal: " + length);
-                buffer.append("DECIMAL").openParentheses().append(length).comma().append(dot).closeParentheses();
-                return;
-            case DATE:
-                buffer.append("DATE");
-                return;
-            case TIME:
-                buffer.append("TIME");
-                return;
-            case TIMESTAMP:
-                buffer.append("TIMESTAMP");
+                buffer.openParentheses().append(length).comma().append(dot).closeParentheses();
                 return;
             case BINARY:
-                if (length == 0)
-                    throw new IllegalArgumentException("varchar length is illegal: " + length);
-                buffer.append("VARBINARY").parentheses(length);
+                buffer.parentheses(length);
                 return;
             default:
                 break;
         }
-        throw new IllegalArgumentException("type is illegal: " + type);
     }
 
     private static void appendForeignKeyAction(SqlBuffer buffer, ForeignKey.ForeignKeyAction action)
@@ -154,21 +95,29 @@ public class SqlAssembleMysql implements SqlAssemble {
         buffer.createTableIfNotExist(tableInfo.getName());
         buffer.openParentheses();
 
+        String charset = tableInfo.getCharset();
+        if (charset.isEmpty())
+            charset = config.getTableCharset();
+        String collate = tableInfo.getCollate();
+        if (collate.isEmpty())
+            collate = tableInfo.getCollate();
+
         for (SqlColumnInfo columnInfo : tableInfo.getColumns()) {
             SqlTableColumnInfo tableColumn = (SqlTableColumnInfo) columnInfo;
             Column.Type type = tableColumn.getType();
-            int length = tableColumn.getLength();
             if (type == Type.AUTO)
-                type = getClassMapType(tableColumn.getField().getType());
+                type = config.getColumnType(tableColumn.getField().getType());
+
+            int length = tableColumn.getLength();
+            if (length == 0)
+                length = config.getLength(type);
+
+            int dot = tableColumn.getDot();
+            if (dot == 0)
+                dot = config.getDot(type);
+
             // 列名
             buffer.name(tableColumn.getName()).space();
-
-            if (length == 0) {
-                if (type == Type.STRING)
-                    length = 32;
-                else if (type == Type.BINARY)
-                    length = 4096;
-            }
 
             // 类型
             appendTypeString(buffer, type, length, tableColumn.getDot());
@@ -180,14 +129,17 @@ public class SqlAssembleMysql implements SqlAssemble {
                 if (!tableColumn.getCollate().isEmpty())
                     buffer.collate().space().append(tableColumn.getCollate()).space();
             }
+
             // 是否允许为空
             if (tableColumn.isNullable())
                 buffer.nullToken().space();
             else
                 buffer.notNull().space();
+
             // 默认值
             if (tableColumn.getDefault() != null)
                 buffer.defaultToken().space().value(tableColumn.getDefault());
+
             // 注释
             if (!tableColumn.getComment().isEmpty())
                 buffer.comment().space().string(tableColumn.getComment());
@@ -195,11 +147,13 @@ public class SqlAssembleMysql implements SqlAssemble {
         }
 
         // 主键
-        buffer.primaryKey().space().openParentheses();
-        for (SqlTableColumnInfo primaryKey : tableInfo.getPrimaryKeys())
-            buffer.name(primaryKey.getName()).comma();
-        buffer.removeLast();
-        buffer.closeParentheses().comma();
+        if (tableInfo.getPrimaryKeys().iterator().hasNext()) {
+            buffer.primaryKey().space().openParentheses();
+            for (SqlTableColumnInfo primaryKey : tableInfo.getPrimaryKeys())
+                buffer.name(primaryKey.getName()).comma();
+            buffer.removeLast();
+            buffer.closeParentheses().comma();
+        }
 
         // 外键
         for (ForeignKey foreignKey : tableInfo.getForeignKeys()) {
@@ -313,10 +267,10 @@ public class SqlAssembleMysql implements SqlAssemble {
 
         if (!tableInfo.getEngine().isEmpty())
             buffer.space().engine().space().equal().space().append(tableInfo.getEngine());
-        if (!tableInfo.getCharset().isEmpty())
-            buffer.space().charset().space().equal().space().append(tableInfo.getCharset());
-        if (!tableInfo.getCollate().isEmpty())
-            buffer.space().collate().space().equal().space().append(tableInfo.getCollate());
+        if (!charset.isEmpty())
+            buffer.space().charset().space().equal().space().append(charset);
+        if (!collate.isEmpty())
+            buffer.space().collate().space().equal().space().append(collate);
 
         if (!tableInfo.getComment().isEmpty())
             buffer.space().comment().space().equal().space().string(tableInfo.getComment());
@@ -359,7 +313,7 @@ public class SqlAssembleMysql implements SqlAssemble {
         if (condition == null || !condition.hasWheres())
             throw new NotSupportedException("delete not supported empty condition");
         SqlBuffer buffer = new SqlBuffer();
-        buffer.deleteFrom().space().name(tableInfo.getTableName());
+        buffer.delete().space().from().space().name(tableInfo.getTableName());
 
         buffer.space().where();
         Collection<SqlGetter> getters = new ArrayList<SqlGetter>();
@@ -393,14 +347,14 @@ public class SqlAssembleMysql implements SqlAssemble {
     @Override
     public <T> SqlAssembled<T> assembleInsert(SqlTableInfo<T> tableInfo) throws Exception {
         SqlBuffer buffer = new SqlBuffer();
-        buffer.insertInto();
+        buffer.insert().space().into();
         return assembleInsertOrReplaceAfter(tableInfo, buffer);
     }
 
     @Override
     public <T> SqlAssembled<T> assembleReplace(SqlTableInfo<T> tableInfo) throws Exception {
         SqlBuffer buffer = new SqlBuffer();
-        buffer.replaceInto();
+        buffer.replace().space().into();
         return assembleInsertOrReplaceAfter(tableInfo, buffer);
     }
 
@@ -525,7 +479,8 @@ public class SqlAssembleMysql implements SqlAssemble {
                 switch (unary.getUnaryType()) {
                     case IS_NULL:
                         SqlColumnInfo columnInfo = mapperInfo.getColumn(unary.getColumn());
-                        buffer.isNull().openParentheses().name(columnInfo.getTableName()).dot().name(columnInfo.getName())
+                        buffer.isNull().openParentheses().name(columnInfo.getTableName()).dot()
+                                .name(columnInfo.getName())
                                 .closeParentheses();
                         break;
                     default:
@@ -557,16 +512,20 @@ public class SqlAssembleMysql implements SqlAssemble {
                         buffer.lessEqual();
                         break;
                     case LIKE:
-                        buffer.like(binary.getValue());
+                        buffer.like().openParentheses().question().closeParentheses();
+                        getters.add(new SqlGetterValue("%" + binary.getValue() + "%"));
                         return;
                     case LIKE_MATCH:
-                        buffer.regexp(binary.getValue());
+                        buffer.regexp().openParentheses().question().closeParentheses();
+                        getters.add(new SqlGetterValue(binary.getValue()));
                         return;
                     case LEFT_LIKE:
-                        buffer.leftLike(binary.getValue());
+                        buffer.like().openParentheses().question().closeParentheses();
+                        getters.add(new SqlGetterValue("%" + binary.getValue()));
                         return;
                     case RIGHT_LIKE:
-                        buffer.rightLike(binary.getValue());
+                        buffer.like().openParentheses().question().closeParentheses();
+                        getters.add(new SqlGetterValue(binary.getValue() + "%"));
                         return;
                     default:
                         break;
@@ -576,10 +535,9 @@ public class SqlAssembleMysql implements SqlAssemble {
                 break;
             }
             case IN: {
-                SqlWhereBinary binary = (SqlWhereBinary) where;
-                SqlColumnInfo columnInfo = mapperInfo.getColumn(binary.getColumn());
-                buffer.name(columnInfo.getTableName()).dot().name(columnInfo.getName()).space().in().space();
                 SqlWhereIn in = (SqlWhereIn) where;
+                SqlColumnInfo columnInfo = mapperInfo.getColumn(in.getColumn());
+                buffer.name(columnInfo.getTableName()).dot().name(columnInfo.getName()).space().in().space();
                 buffer.openParentheses();
                 for (Object value : in.getValues()) {
                     buffer.question().comma();

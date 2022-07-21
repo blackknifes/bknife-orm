@@ -7,9 +7,7 @@ import java.util.Map;
 import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.Column.Type;
 import com.bknife.orm.assemble.SqlConfig;
-import com.bknife.orm.assemble.SqlNameUtils;
 import com.bknife.orm.assemble.exception.NotSupportedException;
-import com.bknife.orm.assemble.exception.SqlIllegalNameException;
 
 public class SqlConfigMysql implements SqlConfig {
     private static final Map<Class<?>, Column.Type> typeMap = new HashMap<>();
@@ -75,26 +73,6 @@ public class SqlConfigMysql implements SqlConfig {
         if (type == null)
             NotSupportedException.throwNotSupportedClass(clazz);
         return type;
-    }
-
-    @Override
-    public String getTableName(String className) throws SqlIllegalNameException {
-        return SqlNameUtils.classToTableName(className);
-    }
-
-    @Override
-    public String getClassName(String tableName) throws SqlIllegalNameException {
-        return SqlNameUtils.tableToClassName(tableName);
-    }
-
-    @Override
-    public String getColumnName(String fieldName) throws SqlIllegalNameException {
-        return SqlNameUtils.fieldToColumnName(fieldName);
-    }
-
-    @Override
-    public String getFieldName(String columnName) throws SqlIllegalNameException {
-        return SqlNameUtils.columnToFieldName(columnName);
     }
 
     @Override

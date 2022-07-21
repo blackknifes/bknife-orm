@@ -5,6 +5,7 @@ public enum SqlType {
     Oracle,
     SqlServer,
     Access,
+    Sqlite,
     DB2,
     MariaDB,
     PostgreSql

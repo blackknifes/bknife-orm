@@ -87,6 +87,10 @@ public class SqlBuffer {
         return append("SET");
     }
 
+    public SqlBuffer concat() {
+        return append("CONCAT");
+    }
+
     public SqlBuffer like() {
         return append("LIKE");
     }
@@ -296,7 +300,7 @@ public class SqlBuffer {
     }
 
     public SqlBuffer createTableIfNotExist(String tableName) {
-        return append("CREATE TABLE IF NOT EXISTS").name(tableName);
+        return append("CREATE TABLE IF NOT EXISTS").space().name(tableName);
     }
 
     public SqlBuffer nullToken() {

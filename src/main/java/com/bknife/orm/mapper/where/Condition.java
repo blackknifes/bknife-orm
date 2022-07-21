@@ -2,6 +2,7 @@ package com.bknife.orm.mapper.where;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -229,6 +230,18 @@ public class Condition implements SqlWhere {
 
     public Condition addInNot(String column, Collection<Object> values) {
         return addSqlWhereNot(new SqlWhereIn(column, values));
+    }
+
+    public Condition addIn(String column, Object... values) {
+        return addIn(column, Arrays.asList(values));
+    }
+
+    public Condition addInOr(String column, Object... values) {
+        return addInOr(column, Arrays.asList(values));
+    }
+
+    public Condition addInNot(String column, Object... values) {
+        return addInNot(column, Arrays.asList(values));
     }
 
     public Condition addOrderAsc(String column) {

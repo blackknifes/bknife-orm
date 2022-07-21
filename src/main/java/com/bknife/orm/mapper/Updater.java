@@ -1,12 +1,13 @@
 package com.bknife.orm.mapper;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.bknife.base.util.DateUtil;
-import com.bknife.orm.mapper.annotation.Update;
+import com.bknife.orm.mapper.annotation.UpdateField;
 import com.bknife.orm.mapper.where.Condition;
 
 public class Updater {
@@ -32,7 +33,7 @@ public class Updater {
         Class<?> clazz = dto.getClass();
         while (clazz != Object.class) {
             for (Field field : clazz.getDeclaredFields()) {
-                if (field.getDeclaredAnnotation(Update.class) == null)
+                if (field.getDeclaredAnnotation(UpdateField.class) == null)
                     continue;
                 field.setAccessible(true);
                 Object val = field.get(dto);
@@ -209,6 +210,18 @@ public class Updater {
     public Updater addInNot(String column, Collection<Object> values) {
         condition.addInNot(column, values);
         return this;
+    }
+
+    public Updater addIn(String column, Object... values) {
+        return addIn(column, Arrays.asList(values));
+    }
+
+    public Updater addInOr(String column, Object... values) {
+        return addInOr(column, Arrays.asList(values));
+    }
+
+    public Updater addInNot(String column, Object... values) {
+        return addInNot(column, Arrays.asList(values));
     }
 
     public Updater addOrderAsc(String column) {

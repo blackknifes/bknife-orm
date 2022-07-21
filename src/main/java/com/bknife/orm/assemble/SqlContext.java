@@ -10,7 +10,7 @@ import com.bknife.orm.annotion.Column;
 import com.bknife.orm.annotion.Table;
 import com.bknife.orm.assemble.exception.NotSupportedException;
 import com.bknife.orm.assemble.exception.RecurseFoundException;
-import com.bknife.orm.assemble.impl.mysql.SqlAssembleMysqlFactory;
+import com.bknife.orm.assemble.impl.mysql.SqlAssembleFactoryMysql;
 
 public class SqlContext implements SqlConstants {
     private Map<String, SqlAssembleFactory> assembleFactories = new HashMap<>();
@@ -21,7 +21,7 @@ public class SqlContext implements SqlConstants {
 
     public SqlContext() {
         // 注册mysql组装器工厂
-        addSupport(MYSQL, new SqlAssembleMysqlFactory());
+        addSupport(MYSQL, new SqlAssembleFactoryMysql());
     }
 
     /**

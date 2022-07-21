@@ -68,6 +68,6 @@ public class PageResult<T> {
 
     @Override
     public String toString() {
-        return Jsons.toJson(this);
+        return Jsons.toString(this);
     }
 }
